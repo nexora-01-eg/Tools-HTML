@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORA — أداة تسمية الميديا</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0a0a0a;
+    --black-2:#131313;
+    --black-3:#1b1b1b;
+    --line:#2a2622;
+    --gold:#BA8F58;
+    --gold-light:#E4C89A;
+    --gold-dim:#8a6b42;
+    --text:#EDE7DD;
+    --text-dim:#9b948a;
+    --green:#5B8C6B;
+    --red:#B35555;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--black);color:var(--text);font-family:'Tajawal',sans-serif;}
+  ::selection{background:var(--gold);color:#000;}
+
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:var(--black-2);}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gold-dim);}
+
+  header{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(180deg,var(--black) 70%,rgba(10,10,10,0.85));
+    border-bottom:1px solid var(--line);
+    padding:18px 28px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand .mark{
+    font-family:'Cormorant Garamond',serif; font-weight:700; letter-spacing:0.14em;
+    font-size:22px; color:var(--gold-light);
+  }
+  .brand .sub{font-size:12.5px; color:var(--text-dim); font-weight:500;}
+  header .spacer{flex:1;}
+
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--black-3); color:var(--text);
+    padding:10px 16px; border-radius:8px; font-family:'Tajawal',sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer; transition:.15s ease; display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--gold-dim); background:#201c17;}
+  .btn:disabled{opacity:.35; cursor:not-allowed;}
+  .btn.primary{background:var(--gold); color:#171208; border-color:var(--gold);}
+  .btn.primary:hover{background:var(--gold-light); border-color:var(--gold-light);}
+  .btn.ghost{background:transparent;}
+  .btn.danger{border-color:#5a2f2f; color:#e2a3a3;}
+  .btn.danger:hover{background:#2a1414;}
+  .btn.small{padding:6px 11px; font-size:12.5px;}
+
+  .folder-badge{
+    display:flex; align-items:center; gap:10px; background:var(--black-3);
+    border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:13px; color:var(--text-dim);
+  }
+  .folder-badge b{color:var(--gold-light); font-weight:700;}
+
+  main{display:flex; align-items:flex-start; gap:0; min-height:calc(100vh - 76px);}
+
+  .grid-wrap{flex:1; padding:22px 24px; min-width:0;}
+  .toolbar{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .toolbar input[type="text"]{
+    background:var(--black-2); border:1px solid var(--line); color:var(--text);
+    padding:9px 14px; border-radius:8px; font-family:'Tajawal',sans-serif; font-size:13.5px; min-width:220px;
+  }
+  .toolbar input[type="text"]:focus{outline:none; border-color:var(--gold-dim);}
+  .count-pill{font-size:12.5px; color:var(--text-dim); background:var(--black-2); border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    padding:110px 20px; color:var(--text-dim); gap:16px;
+  }
+  .empty-state .mark-big{font-family:'Cormorant Garamond',serif; font-size:38px; letter-spacing:.12em; color:var(--gold);}
+  .empty-state p{max-width:420px; line-height:1.9; font-size:14px;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:14px;
+  }
+  .card{
+    background:var(--black-2); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; position:relative; transition:.15s;
+  }
+  .card.skipped{opacity:.4;}
+  .card.done{border-color:var(--green);}
+  .card.error{border-color:var(--red);}
+  .card .thumb-wrap{
+    aspect-ratio:1/1; background:#0f0e0c; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card .thumb-wrap img{width:100%; height:100%; object-fit:cover; display:block;}
+  .card .thumb-wrap .ph{color:var(--text-dim); font-size:11px;}
+  .card .idx{
+    position:absolute; top:6px; right:6px; z-index:2;
+    background:rgba(10,10,10,.82); color:var(--gold-light); font-weight:800; font-size:11.5px;
+    padding:3px 8px; border-radius:3px;
+    clip-path: polygon(0% 0%, 96% 0%, 100% 30%, 98% 100%, 4% 100%, 0% 70%);
+    border:1px solid rgba(186,143,88,.5);
+  }
+  .card .kind{
+    position:absolute; top:6px; left:6px; z-index:2; font-size:10px; font-weight:700;
+    background:rgba(10,10,10,.82); color:var(--text-dim); padding:2px 6px; border-radius:4px;
+  }
+  .card .status-icon{position:absolute; bottom:6px; left:6px; z-index:2; font-size:15px;}
+  .card .meta{padding:9px 10px 11px;}
+  .card .old-name{
+    font-size:10.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:6px; direction:ltr; text-align:left; font-family:monospace;
+  }
+  .card .name-row{display:flex; align-items:center; gap:4px;}
+  .card input.new-name{
+    flex:1; min-width:0; background:var(--black-3); border:1px solid var(--line); color:var(--gold-light);
+    padding:6px 8px; border-radius:6px; font-size:12.5px; direction:ltr; text-align:left; font-family:monospace;
+  }
+  .card input.new-name:focus{outline:none; border-color:var(--gold);}
+  .card .ext{font-size:11.5px; color:var(--text-dim); font-family:monospace;}
+  .card .skip-toggle{
+    margin-top:6px; display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--text-dim); cursor:pointer;
+  }
+
+  aside{
+    width:340px; flex-shrink:0; border-right:1px solid var(--line);
+    padding:22px 20px; position:sticky; top:76px; height:calc(100vh - 76px); overflow-y:auto;
+  }
+  .step{background:var(--black-2); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+  .step h3{margin:0 0 4px; font-size:14px; color:var(--gold-light); display:flex; align-items:center; gap:8px;}
+  .step h3 .num{
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+    background:var(--gold); color:#171208; border-radius:50%; font-size:11.5px; font-weight:900;
+  }
+  .step p{margin:6px 0 12px; font-size:12px; color:var(--text-dim); line-height:1.8;}
+  .step textarea{
+    width:100%; min-height:90px; background:var(--black-3); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:10px; font-family:monospace; font-size:11.5px; direction:ltr; text-align:left; resize:vertical;
+  }
+  .step textarea:focus{outline:none; border-color:var(--gold-dim);}
+  .step .row{display:flex; gap:8px; margin-top:8px;}
+  .support-badge{font-size:11.5px; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:flex; align-items:center; gap:6px;}
+  .support-badge.ok{background:#12241a; color:#8fd6a8; border:1px solid #244433;}
+  .support-badge.no{background:#241717; color:#e3a3a3; border:1px solid #442424;}
+
+  .progress-wrap{margin-top:10px; display:none;}
+  .progress-bar{height:6px; border-radius:4px; background:var(--black-3); overflow:hidden; border:1px solid var(--line);}
+  .progress-bar > div{height:100%; width:0%; background:linear-gradient(90deg,var(--gold-dim),var(--gold-light)); transition:width .2s;}
+  .progress-label{font-size:11px; color:var(--text-dim); margin-top:5px;}
+
+  .log{max-height:180px; overflow-y:auto; font-family:monospace; font-size:11px; margin-top:10px; display:none;}
+  .log .line{padding:3px 0; border-bottom:1px dashed var(--line); display:flex; gap:6px;}
+  .log .line.ok{color:#8fd6a8;}
+  .log .line.err{color:#e3a3a3;}
+
+  .fallback-path{
+    width:100%; background:var(--black-3); border:1px solid var(--line); color:var(--gold-light);
+    padding:9px 10px; border-radius:8px; font-size:12px; direction:ltr; text-align:left; font-family:monospace; margin-bottom:8px;
+  }
+  .fallback-path:focus{outline:none; border-color:var(--gold);}
+  .codebox{
+    background:#050505; border:1px solid var(--line); border-radius:8px; padding:10px; font-family:monospace;
+    font-size:10.5px; color:#c8c1b4; max-height:160px; overflow:auto; direction:ltr; text-align:left; white-space:pre-wrap; margin-top:8px;
+  }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:200;
+    background:var(--black-3); border:1px solid var(--gold-dim); color:var(--gold-light);
+    padding:10px 20px; border-radius:8px; font-size:13px; opacity:0; pointer-events:none; transition:.25s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  .hint{font-size:11px; color:var(--text-dim); margin-top:6px; line-height:1.7;}
+  a.link{color:var(--gold-light);}
+  @media (max-width: 900px){
+    main{flex-direction:column;}
+    aside{width:100%; position:static; height:auto; border-right:none; border-top:1px solid var(--line);}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark">NEXORA</span>
+    <span class="sub">أداة تسمية الميديا</span>
+  </div>
+  <button class="btn primary" id="btnOpen">📁 افتح مجلد</button>
+  <div class="folder-badge" id="folderBadge" style="display:none;">
+    <span>📂 <b id="folderName">—</b></span>
+    <span id="folderCount">0 ملف</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn ghost small" id="btnReset" style="display:none;">إعادة تعيين</button>
+</header>
+
+<main>
+  <div class="grid-wrap">
+    <div class="toolbar" id="toolbar" style="display:none;">
+      <input type="text" id="searchBox" placeholder="ابحث في أسماء الملفات...">
+      <button class="btn small ghost" id="btnSelectAll">تحديد الكل</button>
+      <button class="btn small ghost" id="btnSelectNone">إلغاء التحديد</button>
+      <span class="count-pill" id="statPill">0 محدد بدون اسم جديد</span>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="mark-big">NEXORA</div>
+      <p>افتح مجلد الصور أو الفيديوهات اللي عايز ترتّبه وتسمّيه. الأداة هتعرضهم مرقّمين بترتيب أبجدي ثابت، وهتقدر تصدّر شيت معاينة، تستورد الأسامي، وتولّد كود PowerShell جاهز <b style="color:var(--gold-light);">بالمسار متظبط تلقائيًا من غير ما تعدّل الكود يدويًا</b>.</p>
+      <button class="btn primary" id="btnOpen2">📁 افتح مجلد</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <aside id="aside" style="display:none;">
+    <div class="step" style="border-color:var(--gold-dim); background:#171310;">
+      <h3 style="color:var(--gold-light);">📌 إزاي تستخدم الأداة</h3>
+      <p style="margin:6px 0 0; line-height:2;">
+        <b>خطوة 1:</b> دوس "تصدير شيت المعاينة" تحت.<br>
+        <b>خطوة 2:</b> هتنزل صورة على جهازك — روح المحادثة مع Claude وابعتها له.<br>
+        <b>خطوة 3:</b> Claude هيرد عليك بأسامي — انسخها والصقها في الخانة اللي تحت "الصق الأسامي" ودوس الزرار جنبها.<br>
+        <b>خطوة 4:</b> اكتب مسار المجلد ودوس "توليد كود PowerShell".
+      </p>
+    </div>
+
+    <div class="step">
+      <h3><span class="num">1</span> صدّر شيت المعاينة</h3>
+      <p>زرار واحد بس — هينزّل صورة (أو أكتر لو الملفات كتير) فيها كل الصور مرقّمة. بعتها في الشات هنا وهبعتلك الأسامي.</p>
+      <button class="btn small" id="btnExport" style="width:100%; justify-content:center;">🖼️ تصدير شيت المعاينة</button>
+      <div class="progress-wrap" id="exportProgress">
+        <div class="progress-bar"><div id="exportProgressBar"></div></div>
+        <div class="progress-label" id="exportProgressLabel"></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="num">2</span> الصق الأسامي</h3>
+      <p>الصق هنا اللي هبعته لك في الشات — أي شكل يعمل، مثلاً:<br><code>1: gold-fingerprint</code><br><code>2: desert-dunes</code></p>
+      <textarea id="jsonInput" placeholder="1: gold-fingerprint
+2: desert-dunes
+3: ..."></textarea>
+      <div class="row">
+        <button class="btn small" id="btnImport" style="flex:1; justify-content:center;">✅ استورد الأسامي دي</button>
+      </div>
+      <div class="hint">أو تقدر تكتب الاسم بنفسك مباشرة في الخانة اللي تحت كل صورة في الشبكة، من غير اللصق خالص.</div>
+    </div>
+
+    <div class="step">
+      <h3><span class="num">3</span> ولّد كود التسمية</h3>
+      <p style="margin-top:0;">اكتب مسار المجلد مرة واحدة، وهياخد الأداة الأسامي من الشبكة تلقائيًا وتولّد كود جاهز بالمسار متظبط جواه.</p>
+
+      <label style="font-size:11.5px; color:var(--text-dim);">المسار الكامل للمجلد:</label>
+      <input type="text" class="fallback-path" id="fallbackPath" placeholder="D:\تقديه بصريه\photo" dir="ltr">
+      <button class="btn primary" id="btnGenScript" style="width:100%; justify-content:center;">⚡ توليد كود PowerShell</button>
+      <div class="codebox" id="scriptOutput" style="display:none;"></div>
+      <button class="btn small ghost" id="btnCopyScript" style="width:100%; justify-content:center; margin-top:8px; display:none;">📋 نسخ الكود</button>
+      <div class="hint">1) انسخ الكود · 2) الصقه في Notepad واحفظه بامتداد .ps1 وترميز UTF-8 · 3) شغّله من PowerShell جوه مسار المجلد.</div>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const IMAGE_EXT = ['jpg','jpeg','png','webp','gif','bmp','avif','heic'];
+  const VIDEO_EXT = ['mp4','mov','webm','mkv','avi','m4v'];
+  const MEDIA_EXT = [...IMAGE_EXT, ...VIDEO_EXT];
+
+  let dirHandle = null;
+  let entries = []; // {index, handle, kind, oldName, base, ext, newBase, skip, thumbSrc, thumbLoaded, el, status}
+
+  const $ = (id) => document.getElementById(id);
+  const grid = $('grid');
+  const toast = $('toast');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove('show'), 2600);
+  }
+
+  function extOf(name){
+    const i = name.lastIndexOf('.');
+    if(i === -1) return '';
+    return name.slice(i+1).toLowerCase();
+  }
+  function baseOf(name){
+    const i = name.lastIndexOf('.');
+    if(i === -1) return name;
+    return name.slice(0,i);
+  }
+
+  async function pickFolder(){
+    try{
+      dirHandle = await window.showDirectoryPicker();
+    }catch(e){
+      if(e.name !== 'AbortError') showToast('ما قدرناش نفتح المجلد: ' + e.message);
+      return;
+    }
+    await loadFolder();
+  }
+
+  async function loadFolder(){
+    entries = [];
+    grid.innerHTML = '';
+    const collator = new Intl.Collator('en', { numeric:true, sensitivity:'base' });
+    const raw = [];
+    for await (const [name, handle] of dirHandle.entries()){
+      if(handle.kind !== 'file') continue;
+      const ext = extOf(name);
+      if(!MEDIA_EXT.includes(ext)) continue;
+      raw.push({ handle, oldName:name, ext, base: baseOf(name), kind: IMAGE_EXT.includes(ext) ? 'image' : 'video' });
+    }
+    raw.sort((a,b)=>collator.compare(a.oldName, b.oldName));
+    raw.forEach((r, i)=>{
+      entries.push({
+        index: i+1, handle:r.handle, oldName:r.oldName, ext:r.ext, base:r.base, kind:r.kind,
+        newBase: '', skip:false, thumbSrc:null, thumbLoaded:false, el:null, status:null
+      });
+    });
+
+    $('folderBadge').style.display = 'flex';
+    $('folderName').textContent = dirHandle.name;
+    $('folderCount').textContent = entries.length + ' ملف';
+    $('toolbar').style.display = 'flex';
+    $('aside').style.display = 'block';
+    $('emptyState').style.display = 'none';
+    $('btnReset').style.display = 'inline-flex';
+
+    renderGrid();
+    updateStatPill();
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    entries.forEach(entry=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.index = entry.index;
+      card.innerHTML = `
+        <div class="thumb-wrap"><span class="ph">…</span></div>
+        <span class="idx">#${entry.index}</span>
+        <span class="kind">${entry.kind === 'video' ? '🎬' : '🖼'}</span>
+        <div class="meta">
+          <div class="old-name" title="${escapeHtml(entry.oldName)}">${escapeHtml(entry.oldName)}</div>
+          <div class="name-row">
+            <input type="text" class="new-name" placeholder="اسم-جديد" value="${escapeAttr(entry.newBase)}">
+            <span class="ext">.${entry.ext}</span>
+          </div>
+          <label class="skip-toggle"><input type="checkbox" class="skip-cb"> تجاهل هذا الملف</label>
+        </div>
+      `;
+      entry.el = card;
+      const input = card.querySelector('.new-name');
+      input.addEventListener('input', ()=>{
+        entry.newBase = input.value.trim();
+        updateStatPill();
+      });
+      const skipCb = card.querySelector('.skip-cb');
+      skipCb.addEventListener('change', ()=>{
+        entry.skip = skipCb.checked;
+        card.classList.toggle('skipped', entry.skip);
+        updateStatPill();
+      });
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+    setupLazyThumbs();
+  }
+
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  let observer = null;
+  function setupLazyThumbs(){
+    if(observer) observer.disconnect();
+    observer = new IntersectionObserver((obsEntries)=>{
+      obsEntries.forEach(async (o)=>{
+        if(!o.isIntersecting) return;
+        const idx = parseInt(o.target.dataset.index, 10);
+        const entry = entries.find(e=>e.index === idx);
+        if(!entry || entry.thumbLoaded) return;
+        entry.thumbLoaded = true;
+        observer.unobserve(o.target);
+        await loadThumb(entry);
+      });
+    }, { root: null, rootMargin: '400px' });
+    entries.forEach(entry => observer.observe(entry.el));
+  }
+
+  async function loadThumb(entry){
+    const wrap = entry.el.querySelector('.thumb-wrap');
+    try{
+      const file = await entry.handle.getFile();
+      if(entry.kind === 'image'){
+        const url = URL.createObjectURL(file);
+        entry.thumbSrc = url;
+        wrap.innerHTML = `<img src="${url}" loading="lazy">`;
+      } else {
+        const dataUrl = await videoFrame(file);
+        entry.thumbSrc = dataUrl;
+        if(dataUrl){
+          wrap.innerHTML = `<img src="${dataUrl}">`;
+        } else {
+          wrap.innerHTML = `<span class="ph">🎬 فيديو</span>`;
+        }
+      }
+    }catch(e){
+      wrap.innerHTML = `<span class="ph">⚠️</span>`;
+    }
+  }
+
+  function videoFrame(file){
+    return new Promise((resolve)=>{
+      const url = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.muted = true; video.playsInline = true; video.src = url;
+      const cleanup = (result)=>{ URL.revokeObjectURL(url); resolve(result); };
+      const timeout = setTimeout(()=>cleanup(null), 6000);
+      video.addEventListener('loadeddata', ()=>{
+        try{ video.currentTime = Math.min(0.5, (video.duration||1)/2); }
+        catch(e){ clearTimeout(timeout); cleanup(null); }
+      });
+      video.addEventListener('seeked', ()=>{
+        clearTimeout(timeout);
+        try{
+          const canvas = document.createElement('canvas');
+          const w = video.videoWidth || 320, h = video.videoHeight || 320;
+          canvas.width = 320; canvas.height = Math.round(320 * (h/w || 1));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          cleanup(canvas.toDataURL('image/jpeg', 0.72));
+        }catch(e){ cleanup(null); }
+      });
+      video.addEventListener('error', ()=>{ clearTimeout(timeout); cleanup(null); });
+    });
+  }
+
+  function updateStatPill(){
+    const withName = entries.filter(e=>!e.skip && e.newBase).length;
+    const skipped = entries.filter(e=>e.skip).length;
+    $('statPill').textContent = `${entries.length} ملف — ${withName} جاهز للتسمية — ${skipped} متجاهل`;
+  }
+
+  // Search filter
+  $('searchBox').addEventListener('input', (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    entries.forEach(entry=>{
+      const match = !q || entry.oldName.toLowerCase().includes(q) || entry.newBase.toLowerCase().includes(q);
+      entry.el.style.display = match ? '' : 'none';
+    });
+  });
+
+  $('btnSelectAll').addEventListener('click', ()=>{
+    entries.forEach(e=>{ e.skip = false; e.el.querySelector('.skip-cb').checked = false; e.el.classList.remove('skipped'); });
+    updateStatPill();
+  });
+  $('btnSelectNone').addEventListener('click', ()=>{
+    entries.forEach(e=>{ e.skip = true; e.el.querySelector('.skip-cb').checked = true; e.el.classList.add('skipped'); });
+    updateStatPill();
+  });
+
+  // ---- Export preview sheet ----
+  $('btnExport').addEventListener('click', exportSheets);
+  async function exportSheets(){
+    const cols = 6, rows = 8, perSheet = cols*rows, cell = 240, thumbSize = 200, pad = 20;
+    const progWrap = $('exportProgress'), bar = $('exportProgressBar'), label = $('exportProgressLabel');
+    progWrap.style.display = 'block';
+    const total = entries.length;
+    let done = 0;
+    // ensure all thumbs loaded
+    for(const entry of entries){
+      if(!entry.thumbLoaded){
+        entry.thumbLoaded = true;
+        await loadThumb(entry);
+      }
+      done++;
+      bar.style.width = Math.round(done/total*70) + '%';
+      label.textContent = `تجهيز الصور... ${done}/${total}`;
+    }
+    const sheetCount = Math.ceil(total / perSheet);
+    for(let s=0; s<sheetCount; s++){
+      const canvas = document.createElement('canvas');
+      canvas.width = cols*cell; canvas.height = rows*cell;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      const slice = entries.slice(s*perSheet, (s+1)*perSheet);
+      for(let i=0;i<slice.length;i++){
+        const entry = slice[i];
+        const col = i % cols, row = Math.floor(i/cols);
+        const x = col*cell, y = row*cell;
+        ctx.strokeStyle = '#2a2622'; ctx.strokeRect(x+4,y+4,cell-8,cell-8);
+        if(entry.thumbSrc){
+          try{
+            const img = await loadImg(entry.thumbSrc);
+            const iw = thumbSize, ih = thumbSize;
+            drawCover(ctx, img, x+(cell-iw)/2, y+14, iw, ih);
+          }catch(e){}
+        } else {
+          ctx.fillStyle = '#9b948a'; ctx.font = '13px sans-serif'; ctx.textAlign='center';
+          ctx.fillText('بدون معاينة', x+cell/2, y+cell/2);
+        }
+        ctx.fillStyle = '#BA8F58';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('#'+entry.index, x+cell/2, y+cell-14);
+      }
+      bar.style.width = Math.round(70 + (s+1)/sheetCount*30) + '%';
+      label.textContent = `رسم الشيت ${s+1}/${sheetCount}...`;
+      await downloadCanvas(canvas, `nexora-preview-sheet-${s+1}.png`);
+    }
+    label.textContent = `تم تصدير ${sheetCount} شيت ✅`;
+    showToast(`اتصدّر ${sheetCount} شيت معاينة`);
+    setTimeout(()=>{ progWrap.style.display='none'; }, 3000);
+  }
+  function loadImg(src){
+    return new Promise((resolve,reject)=>{
+      const img = new Image();
+      img.onload = ()=>resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+  function drawCover(ctx, img, dx, dy, dw, dh){
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const scale = Math.max(dw/iw, dh/ih);
+    const sw = dw/scale, sh = dh/scale;
+    const sx = (iw-sw)/2, sy = (ih-sh)/2;
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+  function downloadCanvas(canvas, filename){
+    return new Promise((resolve)=>{
+      canvas.toBlob((blob)=>{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>{ URL.revokeObjectURL(url); resolve(); }, 300);
+      }, 'image/png');
+    });
+  }
+
+  // ---- Import names (accepts JSON, or plain lines like "1: name" / "1 - name" / "#1 name") ----
+  function parseNamesInput(raw){
+    const text = raw.trim();
+    if(!text) return {};
+    // Try strict JSON first
+    try{
+      const data = JSON.parse(text);
+      if(data && typeof data === 'object') return data;
+    }catch(e){ /* not JSON, fall through */ }
+    // Fallback: line-based parsing
+    const result = {};
+    text.split(/\r?\n/).forEach(line=>{
+      const m = line.match(/^\s*#?\s*(\d+)\s*[:\-\)\.]?\s*[""]?([^""]+?)[""]?\s*,?\s*$/);
+      if(m){
+        const idx = m[1];
+        let name = m[2].trim().replace(/[""]/g,'').trim();
+        if(name) result[idx] = name;
+      }
+    });
+    return result;
+  }
+
+  $('btnImport').addEventListener('click', ()=>{
+    const data = parseNamesInput($('jsonInput').value);
+    if(!data || Object.keys(data).length === 0){
+      showToast('مش لاقي أسامي في الكلام اللي لصقته — راجعه تاني');
+      return;
+    }
+    let count = 0;
+    Object.keys(data).forEach(key=>{
+      const idx = parseInt(key, 10);
+      const entry = entries.find(e=>e.index === idx);
+      if(entry){
+        entry.newBase = String(data[key]).trim();
+        entry.el.querySelector('.new-name').value = entry.newBase;
+        count++;
+      }
+    });
+    updateStatPill();
+    showToast(`اتستوردت ${count} اسم`);
+  });
+
+  // ---- Collision-safe final name resolver ----
+  function resolveFinalNames(){
+    const used = new Set();
+    // pre-fill names that won't change (skipped or empty) to avoid collision with them
+    entries.forEach(e=>{
+      if(e.skip || !e.newBase) used.add(e.oldName.toLowerCase());
+    });
+    const plan = [];
+    entries.forEach(e=>{
+      if(e.skip || !e.newBase) return;
+      let base = e.newBase.replace(/[\\/:*?"<>|]/g,'-').trim();
+      let final = `${base}.${e.ext}`;
+      let n = 2;
+      while(used.has(final.toLowerCase())){
+        final = `${base}-${n}.${e.ext}`;
+        n++;
+      }
+      used.add(final.toLowerCase());
+      plan.push({ entry: e, finalName: final });
+    });
+    return plan;
+  }
+
+  // ---- Generate PowerShell script ----
+  $('btnGenScript').addEventListener('click', ()=>{
+    const path = $('fallbackPath').value.trim();
+    if(!path){ showToast('اكتب المسار الأول'); return; }
+    const plan = resolveFinalNames();
+    if(plan.length === 0){ showToast('مفيش ملفات جاهزة للتسمية'); return; }
+    let lines = [`$src = "${path}"`, ''];
+    plan.forEach(({entry, finalName})=>{
+      const esc = entry.oldName.replace(/"/g,'`"');
+      lines.push(`Rename-Item -Path "$src\\${esc}" -NewName "${finalName}"`);
+      lines.push(`Write-Host "${esc} -> ${finalName}" -ForegroundColor Green`);
+    });
+    const script = lines.join('\n');
+    const box = $('scriptOutput');
+    box.textContent = script;
+    box.style.display = 'block';
+    $('btnCopyScript').style.display = 'inline-flex';
+    $('btnCopyScript').onclick = async ()=>{
+      await navigator.clipboard.writeText(script);
+      showToast('اتنسخ الكود');
+    };
+  });
+
+  // ---- open / reset ----
+  $('btnOpen').addEventListener('click', pickFolder);
+  $('btnOpen2').addEventListener('click', pickFolder);
+  $('btnReset').addEventListener('click', ()=>{
+    dirHandle = null; entries = [];
+    grid.innerHTML = '';
+    $('folderBadge').style.display = 'none';
+    $('toolbar').style.display = 'none';
+    $('aside').style.display = 'none';
+    $('emptyState').style.display = 'flex';
+    $('btnReset').style.display = 'none';
+    $('scriptOutput').style.display = 'none';
+    $('btnCopyScript').style.display = 'none';
+  });
+
+  if(!window.showDirectoryPicker){
+    $('emptyState').innerHTML = `<div class="mark-big">NEXORA</div>
+      <p style="color:#e3a3a3;">المتصفح ده مش بيدعم فتح المجلدات مباشرة. افتح الأداة في <b>Chrome</b> أو <b>Edge</b> على الكمبيوتر.</p>`;
+  }
+})();
+</script>
+</body>
+</html>

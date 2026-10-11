@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>NEXORA — أداة إعادة التسمية</title>
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --panel: #131318;
+    --panel2: #1a1a20;
+    --border: #2a2a32;
+    --gold: #BA8F58;
+    --gold-light: #e0c898;
+    --text: #eaeaea;
+    --text-dim: #8a8a92;
+    --green: #4caf7d;
+    --red: #d9534f;
+    --blue: #5a9ce0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 { color: var(--gold-light); font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  button {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  button:hover { border-color: var(--gold); }
+  button.primary { background: var(--gold); color: #1a1408; font-weight: bold; border: none; }
+  button.primary:hover { background: var(--gold-light); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  input[type=text] {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px; font-size: 13px;
+  }
+  .stats { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 18px; min-width: 100px; text-align: center;
+  }
+  .stat-num { font-size: 22px; font-weight: bold; color: var(--gold-light); }
+  .stat-label { font-size: 12px; color: var(--text-dim); }
+  #searchBox { width: 100%; margin-bottom: 14px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .file-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px; font-size: 11px;
+  }
+  .file-card.renamed { border-color: var(--green); }
+  .thumb-box {
+    width: 100%; height: 110px; border-radius: 6px; background: #000;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    position: relative; margin-bottom: 6px;
+  }
+  .thumb-box img, .thumb-box video { width: 100%; height: 100%; object-fit: cover; }
+  .placeholder { color: var(--text-dim); font-size: 24px; }
+  .kind-badge {
+    position: absolute; top: 4px; right: 4px; font-size: 9px; padding: 2px 6px;
+    border-radius: 4px; font-weight: bold;
+  }
+  .kind-badge.video { background: rgba(217,83,79,0.9); color: #fff; }
+  .kind-badge.image { background: rgba(186,143,88,0.9); color: #1a1408; }
+  .kind-badge.audio { background: rgba(90,156,224,0.9); color: #fff; }
+  .orig-name { color: var(--text-dim); word-break: break-all; margin-bottom: 4px; max-height: 28px; overflow: hidden; }
+  .rename-input { width: 100%; }
+  #genOutput { display: none; }
+  textarea {
+    width: 100%; min-height: 260px; background: #000; color: #7be08c;
+    font-family: Consolas, monospace; font-size: 12.5px; border-radius: 8px;
+    border: 1px solid var(--border); padding: 12px; direction: ltr; text-align: left; white-space: pre;
+  }
+  .warn { color: var(--red); font-size: 12px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>NEXORA — أداة إعادة التسمية</h1>
+<div class="sub">اختر مجلد، شوف كل ملف بمعاينة حقيقية، اكتب اسم واضح، واستخرج كود إعادة التسمية</div>
+
+<div class="toolbar">
+  <button class="primary" id="pickBtn">اختر مجلد الميديا</button>
+  <span class="sub" id="scanStatus"></span>
+</div>
+
+<div class="stats" id="statsRow" style="display:none;">
+  <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">إجمالي</div></div>
+  <div class="stat-card"><div class="stat-num" id="statVideo" style="color:var(--red)">0</div><div class="stat-label">فيديو</div></div>
+  <div class="stat-card"><div class="stat-num" id="statImage" style="color:var(--gold-light)">0</div><div class="stat-label">صورة</div></div>
+  <div class="stat-card"><div class="stat-num" id="statAudio" style="color:var(--blue)">0</div><div class="stat-label">صوت</div></div>
+</div>
+
+<input type="text" id="searchBox" placeholder="دور باسم الملف..." style="display:none;">
+
+<div class="toolbar">
+  <button id="genBtn" disabled>ولّد كود إعادة التسمية</button>
+  <button id="sheetBtn" disabled>صدّر شيت معاينة (لإرساله لـ Claude)</button>
+  <span class="sub" id="renamedCount"></span>
+</div>
+
+<div class="toolbar" style="flex-direction:column; align-items:stretch;">
+  <p class="sub">استورد الأسامي اللي هيديهالك Claude (الصق الكود كامل هنا ودوس استيراد)</p>
+  <textarea id="importBox" placeholder='الصق هنا الأسامي، مثلا: {"1000362135964710620.jpg":"gold-fingerprint","1024498615367671509.jpg":"blue-circuit-fingerprint"}' style="min-height:80px;"></textarea>
+  <button id="importBtn" style="width:fit-content; margin-top:8px;">استيراد الأسامي</button>
+  <span class="sub" id="importStatus"></span>
+</div>
+
+<div class="grid" id="fileGrid"></div>
+
+<div id="genOutput" class="toolbar" style="flex-direction:column; align-items:stretch; margin-top:16px;">
+  <p class="sub">عدّل <code>$src</code> في أول سطر لمسار المجلد الحقيقي، وانسخ الكود كامل في PowerShell</p>
+  <textarea id="outputCode" readonly></textarea>
+  <div id="dupWarning" class="warn"></div>
+  <button id="copyBtn" style="margin-top:8px; width:fit-content;">نسخ الكود</button>
+</div>
+
+<script>
+let scannedFiles = [];
+let rootPath = "";
+let searchTerm = "";
+const renameMap = {};
+const thumbCache = {};
+
+function extOf(name){ return name.split('.').pop().toLowerCase(); }
+function kindOf(name){
+  const e = extOf(name);
+  if (['mp4','mov','webm','m4v'].includes(e)) return 'video';
+  if (['jpg','jpeg','png','webp','gif'].includes(e)) return 'image';
+  if (['mp3','wav','m4a'].includes(e)) return 'audio';
+  return null;
+}
+
+async function walkDirectory(dirHandle, relPath){
+  const results = [];
+  for await (const [name, handle] of dirHandle.entries()){
+    const currentRel = relPath ? relPath + '\\' + name : name;
+    if (handle.kind === 'file'){
+      const kind = kindOf(name);
+      if (kind) results.push({ name, relativePath: currentRel, kind, handle });
+    } else if (handle.kind === 'directory'){
+      const nested = await walkDirectory(handle, currentRel);
+      results.push(...nested);
+    }
+  }
+  return results;
+}
+
+document.getElementById('pickBtn').onclick = async () => {
+  try {
+    const dirHandle = await window.showDirectoryPicker();
+    rootPath = dirHandle.name;
+    document.getElementById('scanStatus').textContent = 'بيمسح المجلدات...';
+    const files = await walkDirectory(dirHandle, '');
+    files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+    scannedFiles = files.map((f, i) => ({ ...f, id: i }));
+
+    const counts = { video: 0, image: 0, audio: 0 };
+    scannedFiles.forEach(f => counts[f.kind]++);
+    document.getElementById('statTotal').textContent = scannedFiles.length;
+    document.getElementById('statVideo').textContent = counts.video;
+    document.getElementById('statImage').textContent = counts.image;
+    document.getElementById('statAudio').textContent = counts.audio;
+    document.getElementById('statsRow').style.display = 'flex';
+    document.getElementById('searchBox').style.display = 'block';
+    document.getElementById('scanStatus').textContent = `"${rootPath}" — ${scannedFiles.length} ملف`;
+    document.getElementById('sheetBtn').disabled = false;
+
+    renderGrid();
+    setupLazyLoading();
+  } catch (err){
+    document.getElementById('scanStatus').textContent = 'اتلغى الاختيار أو حصل خطأ: ' + err.message;
+  }
+};
+
+function renderGrid(){
+  const grid = document.getElementById('fileGrid');
+  grid.innerHTML = '';
+  const visible = searchTerm
+    ? scannedFiles.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : scannedFiles;
+
+  visible.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'file-card' + (renameMap[f.id] ? ' renamed' : '');
+    card.dataset.fileId = f.id;
+    card.innerHTML = `
+      <div class="thumb-box" data-thumb-for="${f.id}">
+        <span class="placeholder">${f.kind === 'video' ? '\u25b6' : f.kind === 'audio' ? '\u266a' : '\u25a2'}</span>
+        <span class="kind-badge ${f.kind}">${f.kind}</span>
+      </div>
+      <div class="orig-name">${f.name}</div>
+      <input type="text" class="rename-input" data-file="${f.id}" placeholder="اكتب اسم واضح..." value="${renameMap[f.id] || ''}">
+    `;
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll('.rename-input').forEach(inp => {
+    inp.oninput = () => {
+      const id = parseInt(inp.dataset.file);
+      renameMap[id] = inp.value.trim();
+      inp.closest('.file-card').classList.toggle('renamed', !!renameMap[id]);
+      updateGenBtn();
+    };
+  });
+
+  setupLazyLoading();
+}
+
+document.getElementById('searchBox').oninput = (e) => {
+  searchTerm = e.target.value;
+  renderGrid();
+};
+
+function updateGenBtn(){
+  const count = Object.values(renameMap).filter(v => v).length;
+  document.getElementById('genBtn').disabled = count === 0;
+  document.getElementById('renamedCount').textContent = count > 0 ? `${count} ملف اتسمى` : '';
+}
+
+let observer = null;
+function setupLazyLoading(){
+  if (observer) observer.disconnect();
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        const box = entry.target;
+        const id = parseInt(box.dataset.thumbFor);
+        loadThumb(id, box);
+        observer.unobserve(box);
+      }
+    });
+  }, { rootMargin: '200px' });
+
+  document.querySelectorAll('[data-thumb-for]').forEach(box => observer.observe(box));
+}
+
+let activeLoads = 0;
+const MAX_CONCURRENT = 3;
+const loadQueue = [];
+
+async function loadThumb(id, box){
+  if (thumbCache[id]){
+    renderThumbInto(box, thumbCache[id], scannedFiles.find(f=>f.id===id).kind);
+    return;
+  }
+  loadQueue.push({ id, box });
+  processQueue();
+}
+
+async function processQueue(){
+  if (activeLoads >= MAX_CONCURRENT || loadQueue.length === 0) return;
+  const { id, box } = loadQueue.shift();
+  activeLoads++;
+  try {
+    const f = scannedFiles.find(x => x.id === id);
+    const file = await f.handle.getFile();
+    let thumbUrl;
+    if (f.kind === 'image'){
+      thumbUrl = URL.createObjectURL(file);
+    } else if (f.kind === 'video'){
+      thumbUrl = await makeVideoThumb(file);
+    }
+    if (thumbUrl){
+      thumbCache[id] = thumbUrl;
+      if (document.body.contains(box)) renderThumbInto(box, thumbUrl, f.kind);
+    }
+  } catch (err){
+    box.querySelector('.placeholder').textContent = '!';
+  }
+  activeLoads--;
+  processQueue();
+}
+
+function renderThumbInto(box, url, kind){
+  const badge = box.querySelector('.kind-badge').outerHTML;
+  if (kind === 'image'){
+    box.innerHTML = `<img src="${url}">` + badge;
+  } else {
+    box.innerHTML = `<img src="${url}">` + badge;
+  }
+}
+
+async function makeVideoThumb(file){
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.src = URL.createObjectURL(file);
+    const cleanup = () => setTimeout(() => URL.revokeObjectURL(video.src), 100);
+    video.addEventListener('loadeddata', () => {
+      video.currentTime = Math.min(1, (video.duration || 1) / 2);
+    });
+    video.addEventListener('seeked', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 180; canvas.height = 110;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, 180, 110);
+      resolve(canvas.toDataURL('image/jpeg', 0.6));
+      cleanup();
+    });
+    video.addEventListener('error', () => { resolve(null); cleanup(); });
+    setTimeout(() => resolve(null), 5000);
+  });
+}
+
+document.getElementById('genBtn').onclick = () => {
+  const entries = Object.entries(renameMap).filter(([id, name]) => name);
+  const newNames = entries.map(([id, name]) => name.toLowerCase());
+  const dupSet = newNames.filter((n, i) => newNames.indexOf(n) !== i);
+  const dupWarning = document.getElementById('dupWarning');
+  if (dupSet.length > 0){
+    dupWarning.textContent = `تحذير: في أسامي جديدة متكررة: ${[...new Set(dupSet)].join(', ')} — عدّلهم قبل التنفيذ عشان ملف مايستبدلش التاني`;
+  } else {
+    dupWarning.textContent = '';
+  }
+
+  let lines = [`$src = "PASTE_FULL_PATH_TO_${rootPath || 'YOUR_FOLDER'}_HERE"`, ''];
+  entries.forEach(([id, newName]) => {
+    const f = scannedFiles.find(x => x.id === parseInt(id));
+    const ext = extOf(f.name);
+    lines.push(`Rename-Item -Path "$src\\${f.relativePath}" -NewName "${newName}.${ext}"`);
+    lines.push(`Write-Host "${f.name} -> ${newName}.${ext}" -ForegroundColor Green`);
+  });
+
+  document.getElementById('genOutput').style.display = 'flex';
+  document.getElementById('outputCode').value = lines.join('\n');
+};
+
+document.getElementById('copyBtn').onclick = () => {
+  const ta = document.getElementById('outputCode');
+  ta.select();
+  document.execCommand('copy');
+  document.getElementById('copyBtn').textContent = 'اتنسخ ✓';
+  setTimeout(() => { document.getElementById('copyBtn').textContent = 'نسخ الكود'; }, 1500);
+};
+
+document.getElementById('importBtn').onclick = () => {
+  const raw = document.getElementById('importBox').value.trim();
+  const status = document.getElementById('importStatus');
+  if (!raw){ status.textContent = 'الصق الأسامي الأول'; return; }
+  let mapping;
+  try {
+    mapping = JSON.parse(raw);
+  } catch (err){
+    status.textContent = 'الصيغة مش صح — لازم تكون JSON زي المثال';
+    return;
+  }
+  const nonAudio = scannedFiles.filter(f => f.kind !== 'audio');
+  let matched = 0, unmatched = 0;
+  Object.entries(mapping).forEach(([key, newName]) => {
+    let f = null;
+    const asNum = parseInt(key.replace('#', ''));
+    if (!isNaN(asNum) && nonAudio[asNum - 1]){
+      f = nonAudio[asNum - 1];
+    } else {
+      f = scannedFiles.find(x => x.name === key || x.relativePath.endsWith(key));
+    }
+    if (f){
+      renameMap[f.id] = newName;
+      matched++;
+    } else {
+      unmatched++;
+    }
+  });
+  status.textContent = `اتربط ${matched} ملف${unmatched ? ` — ${unmatched} ملف مالقيتش ليه تطابق` : ''}`;
+  renderGrid();
+  updateGenBtn();
+};
+
+async function loadImgEl(src){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+document.getElementById('sheetBtn').onclick = async () => {
+  const btn = document.getElementById('sheetBtn');
+  btn.disabled = true;
+  const cols = 5, thumbW = 200, thumbH = 120, labelH = 46;
+  const cellW = thumbW, cellH = thumbH + labelH;
+
+  const nonAudio = scannedFiles.filter(f => f.kind !== 'audio');
+  const totalSheets = Math.max(1, Math.ceil(nonAudio.length / 165));
+  const perSheet = Math.ceil(nonAudio.length / totalSheets);
+  const rows = Math.ceil(perSheet / cols);
+
+  for (let s = 0; s < totalSheets; s++){
+    btn.textContent = `بيجهز شيت ${s + 1} من ${totalSheets}...`;
+    const canvas = document.createElement('canvas');
+    canvas.width = cols * cellW;
+    canvas.height = rows * cellH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0a0d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const pageFiles = nonAudio.slice(s * perSheet, (s + 1) * perSheet);
+    for (let i = 0; i < pageFiles.length; i++){
+      const f = pageFiles[i];
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = col * cellW, y = row * cellH;
+
+      let thumbSrc = thumbCache[f.id];
+      if (!thumbSrc){
+        try {
+          const file = await f.handle.getFile();
+          thumbSrc = f.kind === 'image' ? URL.createObjectURL(file) : await makeVideoThumb(file);
+          if (thumbSrc) thumbCache[f.id] = thumbSrc;
+        } catch (e) {}
+      }
+      const img = thumbSrc ? await loadImgEl(thumbSrc) : null;
+
+      ctx.fillStyle = '#1a1a20';
+      ctx.fillRect(x, y, thumbW, thumbH);
+      if (img){
+        const scale = Math.max(thumbW / img.width, thumbH / img.height);
+        const sw = thumbW / scale, sh = thumbH / scale;
+        const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, x, y, thumbW, thumbH);
+      }
+      const globalId = s * perSheet + i + 1;
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(x, y, 40, 26);
+      ctx.fillStyle = '#e0c898';
+      ctx.font = 'bold 16px Consolas, monospace';
+      ctx.fillText('#' + globalId, x + 4, y + 18);
+      ctx.fillStyle = f.kind === 'video' ? '#ff8a80' : '#e0c898';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(f.kind.toUpperCase(), x + thumbW - 46, y + 14);
+      ctx.fillStyle = '#cccccc';
+      ctx.font = '10px Consolas, monospace';
+      const name = f.name.length > 26 ? f.name.slice(0, 26) + '…' : f.name;
+      ctx.fillText(name, x + 2, y + thumbH + 16);
+      ctx.fillStyle = '#666';
+      ctx.font = '9px Consolas, monospace';
+      const path = f.relativePath.length > 30 ? '…' + f.relativePath.slice(-30) : f.relativePath;
+      ctx.fillText(path, x + 2, y + thumbH + 30);
+    }
+
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nexora-sheet-${s + 1}-of-${totalSheets}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  btn.textContent = `تم تصدير ${totalSheets} شيت`;
+  btn.disabled = false;
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORA — أداة تجهيز التواصل عبر واتساب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0F172A; --accent:#D97706; --green:#22C55E; --danger:#DC2626;
+  --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0; --text:#0F172A; --muted:#64748B;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text); direction:rtl; line-height:1.7; padding-bottom:60px;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px;}
+
+header{background:var(--primary); color:#fff; padding:28px 0;}
+header h1{font-size:22px; font-weight:800; margin-bottom:6px;}
+header p{font-size:14px; opacity:.8; max-width:70ch;}
+
+.warn-banner{
+  background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; border-radius:14px;
+  padding:18px 22px; margin:22px 0; font-size:14px; line-height:1.9;
+}
+.warn-banner b{display:block; font-size:15px; margin-bottom:6px;}
+.warn-banner ul{margin:8px 20px 0 0; padding:0;}
+
+.panel{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:20px;}
+.panel h2{font-size:16px; margin-bottom:12px; color:var(--primary);}
+.panel p.hint{font-size:13px; color:var(--muted); margin-bottom:14px;}
+
+.upload-box{
+  border:2px dashed var(--border); border-radius:14px; padding:26px; text-align:center;
+  cursor:pointer; transition:.2s; background:#FAFBFC;
+}
+.upload-box:hover{border-color:var(--accent); background:#FFFBEB;}
+.upload-box input{display:none;}
+.upload-box .icon{font-size:30px; margin-bottom:8px;}
+.upload-status{margin-top:14px; font-size:13.5px; color:var(--muted);}
+.upload-status b{color:var(--green);}
+
+.template-box textarea{
+  width:100%; min-height:90px; border:1px solid var(--border); border-radius:12px; padding:14px;
+  font-family:'Tajawal',sans-serif; font-size:14px; resize:vertical; color:var(--text);
+}
+.template-box .vars{font-size:12px; color:var(--muted); margin-top:8px;}
+.template-box .vars code{background:#F1F5F9; padding:2px 7px; border-radius:6px; font-family:monospace;}
+
+.stats-row{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
+.stat-chip{background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; min-width:130px;}
+.stat-chip b{display:block; font-size:22px; font-family:'IBM Plex Sans',sans-serif; color:var(--primary);}
+.progress-track{height:8px; background:#E2E8F0; border-radius:99px; overflow:hidden; margin-bottom:18px;}
+.progress-fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--green)); width:0%; transition:width .4s;}
+
+.controls-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center;}
+.controls-row input[type=text]{flex:1; min-width:200px; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-family:'Tajawal',sans-serif; font-size:14px;}
+.controls-row select{padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-family:'Tajawal',sans-serif; font-size:14px; background:#fff;}
+.btn{
+  border:none; border-radius:10px; padding:10px 18px; font-family:'Tajawal',sans-serif; font-weight:700;
+  font-size:13.5px; cursor:pointer; transition:.15s; white-space:nowrap;
+}
+.btn-primary{background:var(--primary); color:#fff;}
+.btn-primary:hover{opacity:.9;}
+.btn-outline{background:#fff; border:1px solid var(--border); color:var(--text);}
+.btn-outline:hover{background:#F1F5F9;}
+
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+thead th{
+  text-align:right; padding:10px 12px; background:#F1F5F9; color:var(--muted); font-weight:700;
+  font-size:12px; border-bottom:1px solid var(--border); position:sticky; top:0;
+}
+tbody tr{border-bottom:1px solid #F1F5F9;}
+tbody tr:hover{background:#FAFBFC;}
+tbody tr.sent{background:#F0FDF4;}
+tbody tr.nowa{background:#FEF2F2; opacity:.6;}
+tbody tr.nowa .lead-name{text-decoration:line-through;}
+td{padding:10px 12px; vertical-align:middle;}
+.lead-name{font-weight:700; color:var(--primary); display:block;}
+.lead-cat{font-size:11.5px; color:var(--muted);}
+.file-badge{font-size:11px; padding:4px 9px; border-radius:999px; font-weight:700; white-space:nowrap;}
+.file-badge.ok{background:#DCFCE7; color:#166534;}
+.file-badge.missing{background:#FEE2E2; color:#991B1B;}
+.row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+.row-actions button, .row-actions a{
+  border:none; border-radius:8px; padding:7px 11px; font-size:12px; font-weight:700; cursor:pointer;
+  text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-family:'Tajawal',sans-serif;
+}
+.act-wa{background:#DCFCE7; color:#166534;}
+.act-copy{background:#EFF6FF; color:#1D4ED8;}
+.act-file{background:#FEF3C7; color:#92400E;}
+.act-file.disabled{background:#F1F5F9; color:#94A3B8; cursor:not-allowed;}
+.act-nowa{background:#FEE2E2; color:#991B1B;}
+.act-undo{background:#F1F5F9; color:#475569;}
+.chk{width:18px; height:18px; cursor:pointer;}
+.table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:14px;}
+footer{text-align:center; font-size:12.5px; color:var(--muted); padding:30px 0 10px;}
+.tag-count{background:var(--primary); color:#fff; border-radius:999px; padding:2px 9px; font-size:11px; margin-right:6px;}
+@media(max-width:720px){
+  .controls-row{flex-direction:column; align-items:stretch;}
+  thead{display:none;}
+  table, tbody, tr, td{display:block; width:100%;}
+  tbody tr{border:1px solid var(--border); border-radius:12px; margin-bottom:10px; padding:8px;}
+  td{padding:6px 8px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>NEXORA — أداة تجهيز التواصل مع العملاء عبر واتساب</h1>
+    <p>الأداة دي بتجهزلك رسالة شخصية لكل عميل + رابط واتساب جاهز + الملف المطابق من جهازك — وانت بتدوس "إرسال" بنفسك لكل واحد. مفيش إرسال تلقائي خالص.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="warn-banner">
+    <b>⚠️ مهم قبل ما تبدأ</b>
+    الأداة دي بتساعدك تجهّز بس — الإرسال الفعلي بيتم إنت بنفسك يدويًا لكل عميل، للأسباب دي:
+    <ul>
+      <li>واتساب بيمنع أي أداة/بوت يبعت رسائل تلقائي بالجملة، ولو حصل كده في احتمال حظر رقمك نهائيًا.</li>
+      <li>الـ100 عميل دول cold leads (لسه معندهمش موافقة مسبقة) — الإرسال اليدوي المتحكم فيه بيقلل مخاطر البلاغات.</li>
+      <li>واتساب مش بيسمح لأي موقع يرفق ملف تلقائي في الشات — لازم ترفق الملف بإيدك بعد ما الشات يفتح (اسحبه وسيبه في الشات أو زرار المشبك 📎).</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>الخطوة 1 — ارفع ملفات البرزنتيشن من جهازك</h2>
+    <p class="hint">اختار كل ملفات الـ HTML اللي عملناها (يقدر ياخد أكتر من ملف مرة واحدة). الأداة هتربط كل ملف بالعميل بتاعه تلقائيًا من اسم الملف.</p>
+    <label class="upload-box" id="uploadBox">
+      <div class="icon">📁</div>
+      <div><b>اضغط هنا أو اسحب الملفات</b></div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">.html فقط — تقدر تختار كل الملفات مرة واحدة</div>
+      <input type="file" id="fileInput" accept=".html" multiple>
+    </label>
+    <div class="upload-status" id="uploadStatus">لسه معملتش رفع لأي ملف.</div>
+  </div>
+
+  <div class="panel template-box">
+    <h2>الخطوة 2 — نص الرسالة (قالب عام لكل العملاء)</h2>
+    <textarea id="msgTemplate">السلام عليكم، معايا {name} 🌟
+إحنا فريق NEXORA لمنصات نمو الأعمال، عملنالكم تقرير مبدئي مجاني بيوضح فرص تطوير الحضور الرقمي للنشاط، حابب أبعتلكم نسخة منه؟</textarea>
+    <div class="vars">المتغيرات المتاحة: <code>{name}</code> اسم النشاط بالعربي · <code>{nameEn}</code> بالإنجليزي · <code>{cat}</code> النشاط · <code>{loc}</code> المنطقة</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip">إجمالي العملاء<b id="statTotal">0</b></div>
+    <div class="stat-chip">ملفات متطابقة<b id="statMatched">0</b></div>
+    <div class="stat-chip">تم الإرسال<b id="statSent">0</b></div>
+    <div class="stat-chip" style="border-color:#FCA5A5;">بدون واتساب<b id="statNoWa" style="color:#DC2626;">0</b></div>
+    <div class="stat-chip">متبقي فعليًا<b id="statRemaining">0</b></div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="panel">
+    <div class="controls-row">
+      <input type="text" id="searchBox" placeholder="🔍 دور بالاسم أو النشاط...">
+      <select id="filterSelect">
+        <option value="all">كل العملاء</option>
+        <option value="matched">عندهم ملف مرفوع بس</option>
+        <option value="missing">ملفهم لسه مرفوعش</option>
+        <option value="sent">اتبعتلهم بالفعل</option>
+        <option value="notsent">لسه ما اتبعتلهمش</option>
+        <option value="reachable">قابلين للتواصل (مش متعلّم عليهم)</option>
+        <option value="nowa">معندهمش واتساب</option>
+      </select>
+      <button class="btn btn-outline" id="exportBtn">⬇ تصدير حالة الإرسال CSV</button>
+      <button class="btn btn-outline" id="exportNoWaBtn">⬇ تصدير قايمة بدون واتساب فقط</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>تم</th><th>النشاط</th><th>الهاتف</th><th>الملف</th><th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>NEXORA Business Growth Platform — أداة تنظيم داخلي، مش أداة إرسال تلقائي.</footer>
+</div>
+
+<script>
+const LEADS = [{"n": 1, "nameAr": "مركز الصفوة لطب وتجميل الأسنان - شبين الكوم", "nameEn": "Al-Safwa Dental & Cosmetic Center", "cat": "Medical & Dental Clinics", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 100 847 2291", "wa": "+20 100 847 2291"}, {"n": 2, "nameAr": "باور هاوس جيم أند فيتنس كليب - شبين الكوم", "nameEn": "Power House Gym & Fitness Club", "cat": "Gyms & Fitness Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 106 582 9940", "wa": "+20 106 582 9940"}, {"n": 3, "nameAr": "مركز برستيج للتجميل والسبا - شبين الكوم", "nameEn": "Prestige Beauty Center & Spa", "cat": "Beauty Centers & Salons", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 101 229 8834", "wa": "+20 101 229 8834"}, {"n": 4, "nameAr": "روست اندكو كافيه ومطعم - شبين الكوم", "nameEn": "Roast & Co. Gourmet Cafe & Restaurant", "cat": "Restaurants & Cafes", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 109 451 7720", "wa": "+20 109 451 7720"}, {"n": 5, "nameAr": "شركة الكرمة للاستثمار والتطوير العقاري - شبين الكوم", "nameEn": "El-Karma Real Estate & Urban Development", "cat": "Real Estate & Development", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 102 334 1188", "wa": "+20 102 334 1188"}, {"n": 6, "nameAr": "مستشفى الحياة التخصصي ومجمع العيادات - شبين الكوم", "nameEn": "Al-Hayah Specialized Hospital & Clinics", "cat": "Hospitals & Private Medical Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 231 9900", "wa": "+20 102 884 7711"}, {"n": 7, "nameAr": "معامل ومركز الشروق للتحاليل والأشعة - شبين الكوم", "nameEn": "El-Shorouk Diagnostic Labs & Radiology", "cat": "Diagnostic Labs & Scan Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 222 4110", "wa": "+20 101 993 5522"}, {"n": 8, "nameAr": "مدارس الفرسان الخاصة للغات - شبين الكوم", "nameEn": "Al-Fursan Private Language Schools & Academy", "cat": "Education & Private Schools", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 219 8840", "wa": "+20 106 774 2200"}, {"n": 9, "nameAr": "مركز جراند لصيانة وتلميع السيارات - شبين الكوم", "nameEn": "Grand Auto Detailing & Multi-Brand Service Center", "cat": "Automotive & Maintenance Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 102 441 0099", "wa": "+20 102 441 0099"}, {"n": 10, "nameAr": "معارض المدينة للأثاث والديكور - شبين الكوم", "nameEn": "Al-Madina Home Furniture & Interior Showroom", "cat": "Retail & Home Furniture Showrooms", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 9011", "wa": "+20 100 338 6611"}, {"n": 11, "nameAr": "صيدليات الصفا ومركز الرعاية الدوائية - شبين الكوم", "nameEn": "Al-Safa Pharmacies & Health Chain", "cat": "Retail Pharmacies & Healthcare Retail", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 1180", "wa": "+20 102 441 8899"}, {"n": 12, "nameAr": "شركة الحديدي لتجارة وتوزيع مواد البناء والحديد والأسمنت - شبين الكوم", "nameEn": "Menoufia Steel & Building Materials Co. (Al-Hadidi)", "cat": "Building Materials & Heavy Wholesale Contracting", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 229 0040", "wa": "+20 100 882 3311"}, {"n": 13, "nameAr": "جيم ونادي الكابتن الرياضي للصحة والرشاقة - شبين الكوم", "nameEn": "El-Captin Gym & Fitness Club", "cat": "Fitness Centers, Gyms & Sports Clubs", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 232 8810", "wa": "+20 102 773 9944"}, {"n": 14, "nameAr": "مركز رويال لصيانة وحماية السيارات الألمانية والحديثة - شبين الكوم", "nameEn": "Royal Auto Care & German Car Specialist", "cat": "Auto Repair & Specialist Automotive Service", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 221 9080", "wa": "+20 101 662 4433"}, {"n": 15, "nameAr": "مجمع وقاعات الزهراء الملكية للمناسبات والمؤتمرات - شبين الكوم", "nameEn": "El-Zahraa Grand Palace & Events Compound", "cat": "Hospitality, Event Venues & Wedding Complexes", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 233 4400", "wa": "+20 100 551 8822"}, {"n": 16, "nameAr": "مستشفى الدلتا التخصصي ومجمع العيادات الخارجية - شبين الكوم", "nameEn": "El-Delta Specialized Hospital & Medical Complex", "cat": "Healthcare, Private Hospitals & Specialized Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 222 3344", "wa": "+20 102 110 5588"}, {"n": 17, "nameAr": "مصنع وشركة المصري للأثاث المودرن والكلاسيك والديكور - شبين الكوم", "nameEn": "El-Masry High-End Furniture & Wood Factory", "cat": "Furniture Manufacturing & Luxury Home Decor Retail", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 228 1190", "wa": "+20 100 442 7711"}, {"n": 18, "nameAr": "مطاعم ومأكولات الباشا للمأكولات البحرية والمشويات - شبين الكوم", "nameEn": "El-Basha Seafood & Oriental Fine Dining", "cat": "Fine Dining Restaurants, Seafood & Catering Services", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 231 5520", "wa": "+20 102 993 1144"}, {"n": 19, "nameAr": "هايبر ماركت ونادي التسوق السلام - شبين الكوم", "nameEn": "El-Salam Hypermarket & FMCG Retail Chain", "cat": "Supermarkets, Hypermarkets & FMCG Grocery Retail", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 9900", "wa": "+20 100 332 8855"}, {"n": 20, "nameAr": "مراكز ونظارات الأهرام للبصريات والعناية بالعين - شبين الكوم", "nameEn": "Al-Ahram Optics & Specialist Eye Care Chain", "cat": "Optical Retail, Eyewear & Optometry Centers", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 222 7740", "wa": "+20 101 883 2299"}, {"n": 21, "nameAr": "مجموعة مدارس الصفوة الخاصة للغات والأكاديمية - شبين الكوم", "nameEn": "El-Safwa Private Language Schools & Academy", "cat": "Education, K-12 Private Schools & Educational Complexes", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 8811", "wa": "+20 100 774 2200"}, {"n": 22, "nameAr": "مصنع وشركة الدلتا للغزل والنسيج والملابس الجاهزة - مدينة السادات", "nameEn": "Delta Textile & Garment Manufacturing Enterprise", "cat": "Textile Manufacturing, Industrial Garments & Apparel Export", "loc": "Sadat City, Menoufia, Egypt", "phone": "+20 48 260 4400", "wa": "+20 102 881 9933"}, {"n": 23, "nameAr": "مكتب المؤشر للاستشارات المحاسبية والضريبية وتأسيس الشركات - شبين الكوم", "nameEn": "El-Mouasher Accounting, Audit & Tax Advisory Bureau", "cat": "Professional Services, Accounting, Tax & B2B Legal Advisory", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 221 4430", "wa": "+20 100 662 1199"}, {"n": 24, "nameAr": "مراكز الحياة التخصصية لطب وتجميل الأسنان ومعمل CAD/CAM - شبين الكوم", "nameEn": "Al-Hayat Specialized Dental Centers & CAD/CAM Lab", "cat": "Dental Centers, Oral Surgery & Prosthetic Dental Labs", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 1188", "wa": "+20 101 992 4455"}, {"n": 25, "nameAr": "شركة ومستودعات الواحة للتنمية الزراعية والمخصبات والمبيدات - المنوفية", "nameEn": "El-Waha AgriTech, Fertilizer & Pesticides Trading Enterprise", "cat": "Agriculture, Agrochemicals, Fertilizers & Seed Wholesaling", "loc": "Birket El-Sab / Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 299 3300", "wa": "+20 100 882 3311"}, {"n": 26, "nameAr": "مستشفى الفاروق التخصصي ومركز الإخصاب والجراحة الدقيقة - شبين الكوم", "nameEn": "Al-Farouk Specialized Hospital & IVF Center", "cat": "Healthcare, Private Specialized Hospital, Surgery & IVF Center", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 222 9900", "wa": "+20 101 445 8822"}, {"n": 27, "nameAr": "شركة ومصانع الروضة للصناعات الغذائية والألبان - قويسنا", "nameEn": "El-Rawda Dairy & Food Processing Enterprise", "cat": "Food Processing, Dairy Manufacturing, FMCG & Wholesale Distribution", "loc": "Quesna Industrial Zone, Menoufia, Egypt", "phone": "+20 48 257 3311", "wa": "+20 102 334 7711"}, {"n": 28, "nameAr": "فندق وقاعات جراند بلازا للمؤتمرات والمناسبات - شبين الكوم", "nameEn": "Grand Plaza Hotel & Royal Wedding Complex", "cat": "Hospitality, Luxury Hotel, Banquets & Conference Center", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 231 5500", "wa": "+20 100 994 3311"}, {"n": 29, "nameAr": "مجموعة الدلتا موتورز للسيارات ومراكز الخدمة المعتمدة - شبين الكوم", "nameEn": "Delta Motors Automotive Group & Certified Service Complex", "cat": "Automotive, Multi-Brand Dealership, Aftersales & Service Complex", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 1188", "wa": "+20 100 551 2299"}, {"n": 30, "nameAr": "مجموعة النور للمقاولات والخرسانة الجاهزة والتطوير العقاري - شبين الكوم / السادات", "nameEn": "El-Nour Contracting, Ready-Mix Concrete & Engineering Group", "cat": "Construction, Ready-Mix Concrete, Real Estate & Heavy Equipment Rental", "loc": "Shebin El-Kom / Sadat City, Menoufia, Egypt", "phone": "+20 48 260 8822", "wa": "+20 102 990 4433"}, {"n": 31, "nameAr": "معامل ومراكز الحياة للتحاليل الطبية والأشعة - شبين الكوم / منوف", "nameEn": "Al-Hayah Specialized Laboratories & Radiology Centers", "cat": "Healthcare, Medical Diagnostics, Laboratory & Radiology Network", "loc": "Shebin El-Kom / Menouf / Ashmoun, Menoufia, Egypt", "phone": "+20 48 222 7700", "wa": "+20 101 445 8899"}, {"n": 32, "nameAr": "شركة البركة للتنمية الداجنة وأعلاف الدواجن - السادات / قويسنا", "nameEn": "El-Baraka Integrated Poultry & Feed Mills Co.", "cat": "Agriculture, Feed Manufacturing, Poultry Integration & B2B Wholesaling", "loc": "Sadat City Industrial Zone / Quesna, Menoufia, Egypt", "phone": "+20 48 261 4400", "wa": "+20 100 882 1122"}, {"n": 33, "nameAr": "المصرية لصناعات البلاستيك والتغليف المرن - المنطقة الصناعية بقويسنا", "nameEn": "Al-Masria Packaging & Plastic Industries Co.", "cat": "Industrial Manufacturing, Flexible Packaging & Plastic Extrusion", "loc": "Quesna Industrial Zone, Menoufia, Egypt", "phone": "+20 48 259 3300", "wa": "+20 102 334 9900"}, {"n": 34, "nameAr": "الشركة الملكية للنقل السياحي والليموزين ورحلات مطار القاهرة - شبين الكوم", "nameEn": "Royal Nile Transport & Executive Limousine Fleet", "cat": "Transportation, Fleet Management, Corporate Chauffeured Transport & Airport Shuttles", "loc": "Shebin El-Kom / Cairo-Alexandria Highway, Menoufia, Egypt", "phone": "+20 48 232 9911", "wa": "+20 101 889 2233"}, {"n": 35, "nameAr": "شركة مصانع الغزالي للأثاث الراقي والديكور الداخلي - أشمون / شبين الكوم", "nameEn": "El-Ghazali Luxury Furniture & Woodworking Factory", "cat": "Furniture Manufacturing, Custom Woodworking & Home Decor Showrooms", "loc": "Ashmoun / Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 344 2200", "wa": "+20 102 771 8833"}, {"n": 36, "nameAr": "مستشفى الصفوة التخصصي ومركز الجراحات المتقدمة - شبين الكوم", "nameEn": "El-Safwa Specialized Hospital & Advanced Surgical Center", "cat": "Healthcare, Private Multi-Specialty Hospital, ER & Surgical Center", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 8800", "wa": "+20 102 558 7711"}, {"n": 37, "nameAr": "شركة الدلتا لتجارة وتوزيع حديد التسليح والأسمنت ومواد البناء - قويسنا / أشمون", "nameEn": "Delta Steel & Construction Materials Wholesaling Co.", "cat": "Construction Materials, Rebar & Cement B2B Wholesaling & Logistics", "loc": "Quesna / Ashmoun, Menoufia, Egypt", "phone": "+20 48 257 6600", "wa": "+20 101 992 4433"}, {"n": 38, "nameAr": "مدارس الرواد الخاصة للغات والدولية - شبين الكوم", "nameEn": "El-Rowad International & Language Schools Network", "cat": "Education, Private K-12 School Network & International Campuses", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 221 5500", "wa": "+20 100 774 2288"}, {"n": 39, "nameAr": "شركة الكنانة للتصدير الزراعي ومجمعات التبريد والتعبئة - السادات / مركز بدر", "nameEn": "El-Kenana Agricultural Export & Cold Storage Complex", "cat": "Agriculture Export, Citrus Packing House, Cold Storage & Freight Logistics", "loc": "Sadat City Industrial Zone / Bader Corridor, Menoufia, Egypt", "phone": "+20 48 260 8800", "wa": "+20 101 228 9944"}, {"n": 40, "nameAr": "المجموعة المنوفية للسيارات - المعارض ومراكز الخدمة المعتمدة - شبين الكوم / تلا", "nameEn": "Al-Monofia Auto Group (Multi-Brand Showrooms & Service Centers)", "cat": "Automotive Dealership, Authorized Maintenance Workshops & Spare Parts Distribution", "loc": "Shebin El-Kom / Tala, Menoufia, Egypt", "phone": "+20 48 232 4400", "wa": "+20 109 881 3322"}, {"n": 41, "nameAr": "مصنع الشروق للكرتون المضلع والعلب الدوائية - المنطقة الصناعية بقويسنا", "nameEn": "Al-Shorouk Packaging & Corrugated Carton Factory", "cat": "Industrial Packaging, Corrugated Box Manufacturing, Offset & Flexo Printing", "loc": "Quesna Industrial Zone, Phase 2, Menoufia, Egypt", "phone": "+20 48 259 1100", "wa": "+20 102 331 8855"}, {"n": 42, "nameAr": "سلسلة هايبر ماركت النيل للتجارة والتوزيع - شبين الكوم / منوف / أشمون", "nameEn": "El-Nil Hypermarkets & Superstores Chain", "cat": "Retail, Hypermarket Chain, FMCG Grocery & Express Home Delivery", "loc": "Shebin El-Kom / Menouf / Ashmoun, Menoufia, Egypt", "phone": "+20 48 222 9900", "wa": "+20 106 772 1144"}, {"n": 43, "nameAr": "مجمع قاعات وأسوار الزهور الملكية للأفراح والمؤتمرات - شبين الكوم / كورنيش النيل", "nameEn": "El-Zehoor Royal Wedding Halls & Events Complex", "cat": "Hospitality, Event Venues, Royal Wedding Halls & Catering Services", "loc": "Shebin El-Kom Corniche Corridor, Menoufia, Egypt", "phone": "+20 48 221 3300", "wa": "+20 100 449 8877"}, {"n": 44, "nameAr": "شركة الوفاء للغزل والنسيج والصباغة والطباعة - المحلة الكبرى / أشمون", "nameEn": "Al-Wafa Textile Dyeing, Printing & Weaving Mills", "cat": "Textiles, Fabric Dyeing, Garment Manufacturing & B2B Fabric Export", "loc": "Ashmoun / Shebin Industrial Corridor, Menoufia, Egypt", "phone": "+20 48 240 7700", "wa": "+20 101 883 5522"}, {"n": 45, "nameAr": "شركة السلام للطاقة الشمسية وأنظمة الري الزراعي - شبين الكوم / السادات", "nameEn": "El-Salam Solar Energy & Agricultural Irrigation Systems", "cat": "Renewable Energy, Solar Power EPC, Agricultural Pump Inverters & Commercial Solar", "loc": "Shebin El-Kom / Sadat City, Menoufia, Egypt", "phone": "+20 48 231 9900", "wa": "+20 102 774 1199"}, {"n": 46, "nameAr": "مستشفى الحياة التخصصي ومركز جراحة القلب والقسطرة - شبين الكوم", "nameEn": "Al-Hayah Specialized Hospital & Cardiac Center", "cat": "Hospitals, Cardiac Centers & Specialized Healthcare", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 8811", "wa": "+20 100 993 4455"}, {"n": 47, "nameAr": "شركة الفيروز للمقاولات العامة والاستشارات الهندسية - شبين الكوم", "nameEn": "El-Fayrouz Contracting & Structural Engineering", "cat": "General Contracting, Real Estate Development & Civil Engineering", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 222 1199", "wa": "+20 101 224 8833"}, {"n": 48, "nameAr": "مدارس الراد الخاصة والتنفيذية الدولية - شبين الكوم / منوف", "nameEn": "El-Rowad Private International Schools & Educational Complex", "cat": "Education, K-12 Private Schools & Language Academies", "loc": "Shebin El-Kom / Menouf Corridor, Menoufia, Egypt", "phone": "+20 48 222 5588", "wa": "+20 102 331 9944"}, {"n": 49, "nameAr": "شركة الدلتا لتجارة وتوزيع الأدوية والمستلزمات الطبية - شبين الكوم", "nameEn": "Delta Pharma & Medical Supplies Warehouse", "cat": "Pharmaceutical Distribution, Medical Supplies & B2B Wholesale", "loc": "Shebin El-Kom, Menoufia, Egypt", "phone": "+20 48 223 9900", "wa": "+20 106 882 1133"}, {"n": 50, "nameAr": "معامل النيل للتحاليل الطبية والتشخيص الجزيئي - شبين الكوم / تلا / منوف", "nameEn": "El-Nile Clinical Diagnostics & Molecular Pathology Labs", "cat": "Clinical Diagnostics, Pathology Labs & Health Checkups", "loc": "Shebin El-Kom / Tala / Menouf, Menoufia, Egypt", "phone": "+20 48 222 7744", "wa": "+20 102 994 3322"}, {"n": 51, "nameAr": "فندق وبرج جراند شبين تاور الملكي للمؤتمرات والسياحة - كورنيش النيل", "nameEn": "Grand Shebin Palace Hotel & Executive Resort", "cat": "Hospitality, Luxury Hotels & Executive Conference Centers", "loc": "Shebin El-Kom Corniche, Menoufia, Egypt", "phone": "+20 48 222 3388", "wa": "+20 101 773 2211"}, {"n": 52, "nameAr": "مركز ومعرض الصفوة لصيانة وتجارة السيارات الألماني - شبين الكوم", "nameEn": "El-Safwa German Automotive Center & Luxury Car Dealership", "cat": "Automotive, Luxury Dealership & German Car Service", "loc": "Shebin El-Kom Ring Road, Menoufia, Egypt", "phone": "+20 48 223 6611", "wa": "+20 100 664 9922"}, {"n": 53, "nameAr": "شركة الدلتا للأسمدة والمغذيات الزراعية والكيماويات - شبين الكوم / كفر الزيات", "nameEn": "Delta Agricultural Chemicals & Fertilizer Industries", "cat": "Agrochemicals, Fertilizers & Agricultural Manufacturing", "loc": "Shebin El-Kom Corridor, Menoufia, Egypt", "phone": "+20 48 223 4499", "wa": "+20 102 551 8844"}, {"n": 54, "nameAr": "مصانع ومحلات الكنانة للحلويات الشرقية والغربية والمخبز الآلي - شبين الكوم / منوف", "nameEn": "El-Kenana Gourmet Bakeries & Pastry Factory", "cat": "Food & Beverage, Gourmet Confectionery & Pastry Chain", "loc": "Shebin El-Kom / Menouf, Menoufia, Egypt", "phone": "+20 48 222 6600", "wa": "+20 106 552 9911"}, {"n": 55, "nameAr": "مجمع النصر للتبريد والتخزين اللوجستي للحاصلات الزراعية - شبين الكوم", "nameEn": "El-Nasr Refrigerated Logistics & Cold Storage Hub", "cat": "Logistics, Cold Storage & Agricultural Export Facilities", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 1188", "wa": "+20 102 118 7766"}, {"n": 56, "nameAr": "مركز النور للعيون وجراحات الفيمتو تصحيح الإبصار - شبين الكوم", "nameEn": "Al-Nour Eye & LASIK Surgical Center", "cat": "Healthcare, Ophthalmology & Surgical Specialty Centers", "loc": "Shebin El-Kom Medical District, Menoufia, Egypt", "phone": "+20 48 222 9911", "wa": "+20 100 882 3344"}, {"n": 57, "nameAr": "معامل المختبر للتحاليل الطبية والجينوم - فرع شبين الكوم الرئيسي", "nameEn": "El-Mokhtabar Diagnostic & Genomics Lab - Shebin Central", "cat": "Healthcare, Diagnostic Laboratories & Pathology", "loc": "Shebin El-Kom Commercial Center, Menoufia, Egypt", "phone": "+20 48 223 7700", "wa": "+20 101 223 9988"}, {"n": 58, "nameAr": "شركة مصانع غزل ونسيج وملابس الدلتا - المنطقة الصناعية بشبين الكوم", "nameEn": "Delta Textile & Apparel Manufacturing Complex", "cat": "Industrial, Textile & Apparel Manufacturing", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 1188", "wa": "+20 102 334 7711"}, {"n": 59, "nameAr": "مجموعة مصانع المنوفية للحديد والصلب والمنشآت المعدنية - شبين الكوم", "nameEn": "Menoufia Steel & Industrial Metal Fabrication Complex", "cat": "Industrial, Steel Fabrication & Heavy Construction Materials", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 9955", "wa": "+20 100 445 1122"}, {"n": 60, "nameAr": "مول ومجمع جراند رويال التجاري والهايبر ماركت - كورنيش شبين الكوم", "nameEn": "Grand Royal Commercial Mall & Hypermarket Complex", "cat": "Commercial Real Estate, Shopping Malls & Retail Outlets", "loc": "Shebin El-Kom Corniche, Menoufia, Egypt", "phone": "+20 48 222 5588", "wa": "+20 101 883 2277"}, {"n": 61, "nameAr": "مركز السلام المتقدم للأشعة التشخيصية والرنين المغناطيسي - شبين الكوم", "nameEn": "El-Salam Advanced Radiology & Scans Center", "cat": "Healthcare, Advanced Diagnostic Imaging & Scans", "loc": "Shebin El-Kom Medical Zone, Menoufia, Egypt", "phone": "+20 48 223 8899", "wa": "+20 100 551 2233"}, {"n": 62, "nameAr": "شركة شبين للصناعات الغذائية والحفظ والتصدير - المنطقة الصناعية", "nameEn": "Shebin Food Processing & Agro-Export Plant", "cat": "Food & Beverage, Agro-Processing & Food Manufacturing", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 3311", "wa": "+20 102 667 8899"}, {"n": 63, "nameAr": "مدارس الأندلس الخاصة لغات - شبين الكوم", "nameEn": "Al-Andalus Private Language Academies", "cat": "Education, K-12 Private Language Schools & International Academies", "loc": "Shebin El-Kom Educational District, Menoufia, Egypt", "phone": "+20 48 222 4411", "wa": "+20 100 778 9900"}, {"n": 64, "nameAr": "قصور وسلسلة مطاعم الخديوي للمأكولات والحفلات - كورنيش شبين الكوم", "nameEn": "El-Khedewy Fine Dining Palace & Event Hall", "cat": "Hospitality, Fine Dining Restaurants & Event Venues", "loc": "Shebin El-Kom Corniche, Menoufia, Egypt", "phone": "+20 48 222 8822", "wa": "+20 100 223 6655"}, {"n": 65, "nameAr": "مجموعة مستودعات الدلتا لتوزيع الأدوية والمستلزمات الطبية - شبين الكوم", "nameEn": "Delta Pharmaceutical Distribution & Depot Complex", "cat": "Pharmaceuticals, Medical Logistics & Wholesale Distribution", "loc": "Shebin El-Kom Logistics Belt, Menoufia, Egypt", "phone": "+20 48 223 6644", "wa": "+20 101 992 5544"}, {"n": 66, "nameAr": "مركز الزهراء لأطفال الأنابيب والحقن المجهري والخصوبة - شبين الكوم", "nameEn": "Al-Zahraa IVF & Reproductive Medicine Center", "cat": "Healthcare, IVF, Fertility & Reproductive Medicine", "loc": "Shebin El-Kom Medical District, Menoufia, Egypt", "phone": "+20 48 222 7733", "wa": "+20 100 334 9922"}, {"n": 67, "nameAr": "الشركة المنوفية للطاقة الشمسية والمقاولات الكهروميكانيكية - شبين الكوم", "nameEn": "Menoufia Solar Energy & MEP Engineering Contracting", "cat": "Engineering, Renewable Energy & Electromechanical Contracting", "loc": "Shebin El-Kom Commercial District, Menoufia, Egypt", "phone": "+20 48 223 9988", "wa": "+20 100 667 4433"}, {"n": 68, "nameAr": "مجموعة الرواد للمواد الهندسية ومواد البناء والحديد - شبين الكوم", "nameEn": "Al-Rowad Engineering & Building Materials Complex", "cat": "Building Materials, Steel & Construction Wholesale", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 1188", "wa": "+20 100 882 1199"}, {"n": 69, "nameAr": "شركة الدلتا لتكنولوجيا المعلومات والحلول الأمنية - شبين الكوم", "nameEn": "Delta Tech IT & Cyber Security Solutions", "cat": "IT Infrastructure, Cloud Services & Cyber Security", "loc": "Shebin El-Kom Commercial Hub, Menoufia, Egypt", "phone": "+20 48 222 4499", "wa": "+20 100 553 2211"}, {"n": 70, "nameAr": "مجمع شبين الكوم للهندسة الدقيقة وتشغيل المعادن والقوالب CNC", "nameEn": "Shebin Precision CNC & Die Manufacturing Workshop", "cat": "Precision Engineering, CNC Machining & Toolmaking", "loc": "Shebin El-Kom Industrial Workshop Zone, Menoufia, Egypt", "phone": "+20 48 223 8811", "wa": "+20 101 223 9900"}, {"n": 71, "nameAr": "المنوفية للخدمات اللوجستية والتخليص الجمركي والشحن - شبين الكوم", "nameEn": "Menoufia Logistics & Customs Freight Forwarding", "cat": "Logistics, Customs Clearance & International Freight Forwarding", "loc": "Shebin El-Kom Inland Transport Terminal, Menoufia, Egypt", "phone": "+20 48 222 9944", "wa": "+20 100 448 3322"}, {"n": 72, "nameAr": "مركز الشروق للأشعة التشخيصية والرنين المغناطيسي والقطعية - شبين الكوم", "nameEn": "El-Shorouk Diagnostic Imaging & MRI Center", "cat": "Diagnostic Radiology, MRI & Healthcare Centers", "loc": "Shebin El-Kom Medical District, Menoufia, Egypt", "phone": "+20 48 223 5522", "wa": "+20 100 771 4455"}, {"n": 73, "nameAr": "شركة مطاحن النيل ومصنع الأعلاف المركزة - شبين الكوم", "nameEn": "Nile Grain Mills & Animal Feed Factory", "cat": "Agro-Industrial Milling, Animal Feed & Poultry Nutrition", "loc": "Shebin El-Kom Agro-Industrial Sector, Menoufia, Egypt", "phone": "+20 48 223 9911", "wa": "+20 100 882 7733"}, {"n": 74, "nameAr": "مركز الصفوة لصيانة وتأهيل السيارات الألمانية والأوروبية - شبين الكوم", "nameEn": "Al-Safwa Auto Service & German Car Diagnostic Center", "cat": "Automotive Maintenance, German Auto Diagnostics & Spare Parts", "loc": "Shebin El-Kom Automobile District, Menoufia, Egypt", "phone": "+20 48 223 7755", "wa": "+20 100 334 6611"}, {"n": 75, "nameAr": "شركة شبين الأنظمة الذكية والأمنية والمراقبة والإنتركم - شبين الكوم", "nameEn": "Shebin Smart Home & Security Systems Contracting", "cat": "CCTV Security Systems, Smart Home Automation & Intercom Contracting", "loc": "Shebin El-Kom Commercial District, Menoufia, Egypt", "phone": "+20 48 223 6633", "wa": "+20 100 221 5544"}, {"n": 76, "nameAr": "شركة الدلتا للتنمية الزراعية والمخصبات والمبيدات - شبين الكوم", "nameEn": "Delta Agro Chemical & Fertilizer Distribution", "cat": "Agricultural Chemicals, Bio-Fertilizers & Crop Protection", "loc": "Shebin El-Kom Agricultural Wholesale Market, Menoufia, Egypt", "phone": "+20 48 223 8844", "wa": "+20 100 449 1122"}, {"n": 77, "nameAr": "شركة البركة للنقل الثقيل ورفع الأوناش والمعدات الثقيلة - شبين الكوم", "nameEn": "El-Baraka Heavy Transport & Crane Rental Fleet", "cat": "Heavy Logistics, Mobile Crane Rental & Oversized Transport", "loc": "Shebin El-Kom Industrial Ring Road, Menoufia, Egypt", "phone": "+20 48 223 9977", "wa": "+20 100 551 8899"}, {"n": 78, "nameAr": "شركة المنوفية للمستلزمات والأجهزة الطبية والتجهيزات المكتملة - شبين الكوم", "nameEn": "Menoufia Medical Equipment & Hospital Supplies Depot", "cat": "Medical Equipment Wholesale, Hospital Supplies & Surgical Furniture", "loc": "Shebin El-Kom Medical Wholesale Zone, Menoufia, Egypt", "phone": "+20 48 222 8833", "wa": "+20 100 662 1144"}, {"n": 79, "nameAr": "مجمع قاعات رويال الملكية للمناسبات والأفراح - شبين الكوم", "nameEn": "Shebin Royal Wedding Hall & Event Complex", "cat": "Event Venues, Wedding Halls & Luxury Hospitality", "loc": "Shebin El-Kom Stadium District, Menoufia, Egypt", "phone": "+20 48 223 1155", "wa": "+20 100 887 2233"}, {"n": 80, "nameAr": "مستشفى الإيمان التخصصي لطب وجراحة الأطفال والحضانات - شبين الكوم", "nameEn": "Al-Iman Specialized Pediatric & Neonatal Hospital", "cat": "Pediatric Healthcare, Neonatal NICU & Specialized Children Surgery", "loc": "Shebin El-Kom Medical Zone, Menoufia, Egypt", "phone": "+20 48 223 4488", "wa": "+20 100 994 3311"}, {"n": 81, "nameAr": "مصنع النيل لتشكيل وتصنيع الاستانلس ستيل والصاج المعالج - شبين الكوم", "nameEn": "Nile Stainless Steel & Sheet Metal Fabrication", "cat": "Sheet Metal Fabrication, Stainless Kitchens & Industrial Laser Cutting", "loc": "Shebin El-Kom Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 3311", "wa": "+20 100 443 2299"}, {"n": 82, "nameAr": "معمل شبين الحديث للتركيبات الرقمية وخراطة الزيركون CAD/CAM - شبين الكوم", "nameEn": "Shebin Modern Dental Lab & CAD/CAM Milling Center", "cat": "Dental Prosthetics Laboratory, CAD/CAM Zirconia Milling & Digital Dentistry", "loc": "Shebin El-Kom Medical Tower Sector, Menoufia, Egypt", "phone": "+20 48 222 7711", "wa": "+20 100 882 4411"}, {"n": 83, "nameAr": "شركة المنوفية للواجهات الزجاجية والألومنيوم والكلادينج والهياكل - شبين الكوم", "nameEn": "Menoufia Glass & Aluminum Structural Facades", "cat": "Structural Glass, Aluminum Facades & Curtain Wall Contracting", "loc": "Shebin El-Kom Industrial Ring Road, Menoufia, Egypt", "phone": "+20 48 223 2288", "wa": "+20 100 554 1177"}, {"n": 84, "nameAr": "شركة الدلتا لتجميد وتعبئة وتصدير الحاصلات الزراعية والخضروات - شبين الكوم", "nameEn": "Delta Fresh Frozen Vegetables & Export Packing House", "cat": "Agro-Export Packing House, IQF Frozen Vegetables & Cold Chain Export", "loc": "Shebin El-Kom Agricultural Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 1122", "wa": "+20 100 772 3388"}, {"n": 85, "nameAr": "مول وشبين سنتر التجاري والترفيهي وإدارة العقارات التجارية - شبين الكوم", "nameEn": "Shebin Commercial Center & Retail Mall Complex", "cat": "Commercial Real Estate, Retail Mall Operations & Store Leasing", "loc": "Shebin El-Kom City Center Avenue, Menoufia, Egypt", "phone": "+20 48 222 9944", "wa": "+20 100 883 5522"}, {"n": 86, "nameAr": "فندق وقصر شبين الماجستيك والمؤتمرات الدولي - شبين الكوم", "nameEn": "Shebin Grand Hotel & Conference Center", "cat": "Luxury Hospitality, 5-Star Hotel Rooms & Corporate Conference Center", "loc": "Shebin El-Kom Nile Corniche District, Menoufia, Egypt", "phone": "+20 48 222 1000", "wa": "+20 100 100 1000"}, {"n": 87, "nameAr": "شركة المنصور لمعدات السباكة ومكافحة الحريق والشبكات - شبين الكوم", "nameEn": "El-Mansour Plumbing & Firefighting Equipment Wholesale", "cat": "Plumbing Wholesale, Firefighting Systems & Piping Infrastructure", "loc": "Shebin El-Kom Commercial Wholesale Zone, Menoufia, Egypt", "phone": "+20 48 222 6633", "wa": "+20 100 331 8822"}, {"n": 88, "nameAr": "شركة النيل لهندسة معالجة المياه ومحطات التحلية والتحليل - شبين الكوم", "nameEn": "Nile Water Treatment & Reverse Osmosis Engineering", "cat": "Water Treatment Plants, Industrial Reverse Osmosis (RO) & Purity Systems", "loc": "Shebin El-Kom Industrial Sector, Menoufia, Egypt", "phone": "+20 48 223 5544", "wa": "+20 100 442 9911"}, {"n": 89, "nameAr": "مستشفى شبين التخصصي لعيون وجراحات الفيمتو ليزيك والمياه البيضاء - شبين الكوم", "nameEn": "Shebin Specialized Eye Hospital & LASIK Center", "cat": "Ophthalmology Hospital, Femto-LASIK Surgery & Cataract Center", "loc": "Shebin El-Kom Stadium Sector, Menoufia, Egypt", "phone": "+20 48 222 4477", "wa": "+20 100 883 1155"}, {"n": 90, "nameAr": "شركة المنوفية لتفريخ الدواجن والمستلزمات البيطرية - شبين الكوم", "nameEn": "Menoufia Poultry Hatcheries & Veterinary Supplies", "cat": "Poultry Hatchery, Veterinary Pharmaceuticals & Feed Wholesale", "loc": "Shebin El-Kom Agricultural Wholesale Belt, Menoufia, Egypt", "phone": "+20 48 222 7788", "wa": "+20 100 551 2244"}, {"n": 91, "nameAr": "شركة الدلتا لقطع غيار المعدات الثقيلة والهيدروليك - شبين الكوم", "nameEn": "Delta Heavy Machinery Parts & Hydraulic Repair", "cat": "Heavy Machinery Parts, Excavator Hydraulics & Equipment Overhaul", "loc": "Shebin El-Kom Heavy Industrial Zone, Menoufia, Egypt", "phone": "+20 48 223 8899", "wa": "+20 100 662 3388"}, {"n": 92, "nameAr": "مصنع النيل للمحولات الكهربائية ولوحات التوزيع والجهد المتوسط - شبين الكوم", "nameEn": "Nile Electrical Transformers & Panel Board Factory", "cat": "Electrical Transformers, Medium Voltage Switchgear & Panel Boards", "loc": "Shebin El-Kom Heavy Industrial Zone, Menoufia, Egypt", "phone": "+20 48 222 9900", "wa": "+20 100 771 4499"}, {"n": 93, "nameAr": "مؤسسة التوفيق لتوزيع الدقيق ومستلزمات المخابز والحلواني - شبين الكوم", "nameEn": "El-Tawfeek Flour Distribution & Bakery Supplies Hub", "cat": "Flour Wholesale, Bakery Supplies & Commercial Food Ingredients", "loc": "Shebin El-Kom Commercial Wholesale Belt, Menoufia, Egypt", "phone": "+20 48 222 1199", "wa": "+20 100 223 8811"}, {"n": 94, "nameAr": "شركة النيل للتبريد ومستودعات التجميد واللوجستيات - شبين الكوم", "nameEn": "Nile Cold Storage & Refrigerated Logistics Terminal", "cat": "Cold Storage Warehousing, Multi-Temperature Chambers & Refrigerated Logistics", "loc": "Shebin El-Kom Logistics Belt, Menoufia, Egypt", "phone": "+20 48 222 3311", "wa": "+20 100 882 5522"}, {"n": 95, "nameAr": "نادي شبين الرياضي وأكاديمية الأداء البدني والتأهيل - شبين الكوم", "nameEn": "Shebin Fitness & Sports Performance Club", "cat": "Sports Club, Athletic Academy & Physical Rehabilitation Center", "loc": "Shebin El-Kom Stadium Sector, Menoufia, Egypt", "phone": "+20 48 222 8811", "wa": "+20 100 441 7722"}, {"n": 96, "nameAr": "مصنع المنوفية لصناعة الورق والكرتون المضلع ومواد التعبئة والتغليف - شبين الكوم", "nameEn": "Menoufia Paper & Corrugated Box Packaging Factory", "cat": "Corrugated Box Packaging, Custom Paperboard & Food Grade Cartons", "loc": "Shebin El-Kom Industrial Sector, Menoufia, Egypt", "phone": "+20 48 222 5599", "wa": "+20 100 884 3311"}, {"n": 97, "nameAr": "مركز الدلتا المتقدم لجراحة العظام والمفاصل والعلاج الطبيعي - شبين الكوم", "nameEn": "Delta Orthopedic Surgery & Rehabilitation Center", "cat": "Orthopedic Hospital, Joint Replacement & Physical Rehabilitation Center", "loc": "Shebin El-Kom Medical Sector, Menoufia, Egypt", "phone": "+20 48 222 6611", "wa": "+20 100 772 1144"}, {"n": 98, "nameAr": "مركز شبين لقطع غيار السيارات اليابانية والكورية والمحركات المستوردة - شبين الكوم", "nameEn": "Shebin Auto Spare Parts & Japanese Import Depot", "cat": "Auto Spare Parts Wholesale, Japanese Engine Imports & Mechanical Components", "loc": "Shebin El-Kom Automotive Sector, Menoufia, Egypt", "phone": "+20 48 222 4433", "wa": "+20 100 332 7711"}, {"n": 99, "nameAr": "شركة النور للسخانات الشمسية والمقاولات الكهروميكانيكية - شبين الكوم", "nameEn": "El-Nour Solar Water Heating & Plumbing Contracting", "cat": "Solar Thermal Heating, Heat Pump Systems & MEP Plumbing Contracting", "loc": "Shebin El-Kom Stadium Sector, Menoufia, Egypt", "phone": "+20 48 222 5522", "wa": "+20 100 661 4433"}, {"n": 100, "nameAr": "شركة المنوفية للأنفاق والبيوت المحمية وشبكات الري الحديث - شبين الكوم", "nameEn": "Menoufia Advanced Agricultural Greenhouse & Drip Irrigation Systems", "cat": "Agricultural Greenhouses, Drip Irrigation Engineering & Smart Farming Equipment", "loc": "Shebin El-Kom Agricultural Sector, Menoufia, Egypt", "phone": "+20 48 222 9911", "wa": "+20 100 885 2211"}]
+;
+const fileMap = {}; // leadNumber -> {name, blobUrl, file}
+const sentSet = new Set();
+const noWaSet = new Set();
+
+function normalizePhone(p){
+  return (p||'').replace(/[^\d+]/g,'').replace(/^\+/,'');
+}
+
+function renderTemplate(tpl, lead){
+  return tpl
+    .replaceAll('{name}', lead.nameAr)
+    .replaceAll('{nameEn}', lead.nameEn)
+    .replaceAll('{cat}', lead.cat)
+    .replaceAll('{loc}', lead.loc);
+}
+
+function updateStats(){
+  const total = LEADS.length;
+  const matched = Object.keys(fileMap).length;
+  const sent = sentSet.size;
+  const nowa = noWaSet.size;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statMatched').textContent = matched;
+  document.getElementById('statSent').textContent = sent;
+  document.getElementById('statNoWa').textContent = nowa;
+  document.getElementById('statRemaining').textContent = Math.max(0, total - sent - nowa);
+  const denom = total - nowa;
+  document.getElementById('progressFill').style.width = (denom > 0 ? (sent/denom*100) : 0).toFixed(1) + '%';
+}
+
+function buildRow(lead){
+  const tr = document.createElement('tr');
+  tr.dataset.n = lead.n;
+  const matched = fileMap[lead.n];
+  const isSent = sentSet.has(lead.n);
+  const isNoWa = noWaSet.has(lead.n);
+  if(isSent) tr.classList.add('sent');
+  if(isNoWa) tr.classList.add('nowa');
+
+  const waNumber = normalizePhone(lead.wa);
+  const msg = encodeURIComponent(renderTemplate(document.getElementById('msgTemplate').value, lead));
+  const waLink = `https://wa.me/${waNumber}?text=${msg}`;
+
+  const waButton = isNoWa
+    ? `<span class="act-file disabled">💬 لا يوجد واتساب</span>`
+    : `<a class="act-wa" href="${waLink}" target="_blank">💬 افتح واتساب</a>`;
+
+  const nowaToggle = isNoWa
+    ? `<button class="act-undo" data-role="undo-nowa">↺ رجّع الرقم</button>`
+    : `<button class="act-nowa" data-role="mark-nowa">❌ مفيش واتساب</button>`;
+
+  tr.innerHTML = `
+    <td>${lead.n}</td>
+    <td><input type="checkbox" class="chk" ${isSent?'checked':''} data-role="sent" ${isNoWa?'disabled':''}></td>
+    <td><span class="lead-name">${lead.nameAr}</span><span class="lead-cat">${lead.cat} · ${lead.loc}</span></td>
+    <td dir="ltr" style="text-align:right;">${lead.phone}</td>
+    <td>${matched ? `<span class="file-badge ok">✓ متاح</span>` : `<span class="file-badge missing">لسه مرفوعش</span>`}</td>
+    <td>
+      <div class="row-actions">
+        ${waButton}
+        <button class="act-copy" data-role="copy">📋 نسخ الرسالة</button>
+        ${matched
+          ? `<a class="act-file" href="${matched.blobUrl}" download="${matched.name}">⬇ حمّل الملف</a>`
+          : `<span class="act-file disabled">⬇ حمّل الملف</span>`}
+        ${nowaToggle}
+      </div>
+    </td>
+  `;
+
+  tr.querySelector('[data-role="sent"]').addEventListener('change', (e) => {
+    if(e.target.checked) sentSet.add(lead.n); else sentSet.delete(lead.n);
+    tr.classList.toggle('sent', e.target.checked);
+    updateStats();
+  });
+  tr.querySelector('[data-role="copy"]').addEventListener('click', () => {
+    const text = renderTemplate(document.getElementById('msgTemplate').value, lead);
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = tr.querySelector('[data-role="copy"]');
+      const old = btn.textContent;
+      btn.textContent = '✓ اتنسخت';
+      setTimeout(() => btn.textContent = old, 1400);
+    });
+  });
+  const nowaBtn = tr.querySelector('[data-role="mark-nowa"]');
+  if(nowaBtn) nowaBtn.addEventListener('click', () => {
+    noWaSet.add(lead.n);
+    sentSet.delete(lead.n);
+    renderTable();
+  });
+  const undoBtn = tr.querySelector('[data-role="undo-nowa"]');
+  if(undoBtn) undoBtn.addEventListener('click', () => {
+    noWaSet.delete(lead.n);
+    renderTable();
+  });
+
+  return tr;
+}
+
+function renderTable(){
+  const search = document.getElementById('searchBox').value.trim().toLowerCase();
+  const filter = document.getElementById('filterSelect').value;
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  LEADS.forEach(lead => {
+    if(search && !(lead.nameAr.toLowerCase().includes(search) || lead.nameEn.toLowerCase().includes(search) || lead.cat.toLowerCase().includes(search))) return;
+    const matched = !!fileMap[lead.n];
+    const sent = sentSet.has(lead.n);
+    const nowa = noWaSet.has(lead.n);
+    if(filter === 'matched' && !matched) return;
+    if(filter === 'missing' && matched) return;
+    if(filter === 'sent' && !sent) return;
+    if(filter === 'notsent' && sent) return;
+    if(filter === 'reachable' && nowa) return;
+    if(filter === 'nowa' && !nowa) return;
+    tbody.appendChild(buildRow(lead));
+  });
+  updateStats();
+}
+
+// ---- file upload handling ----
+const fileInput = document.getElementById('fileInput');
+const uploadBox = document.getElementById('uploadBox');
+const uploadStatus = document.getElementById('uploadStatus');
+
+fileInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  let added = 0;
+  files.forEach(file => {
+    const m = file.name.match(/^(\d+)-/);
+    if(m){
+      const n = parseInt(m[1], 10);
+      const url = URL.createObjectURL(file);
+      fileMap[n] = { name: file.name, blobUrl: url, file };
+      added++;
+    }
+  });
+  uploadStatus.innerHTML = `تم رفع <b>${added}</b> ملف وربطهم بالعملاء بنجاح. (إجمالي مرفوع: ${Object.keys(fileMap).length})`;
+  renderTable();
+});
+
+['dragover','dragenter'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.style.borderColor = 'var(--accent)'; }));
+['dragleave','drop'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.style.borderColor = 'var(--border)'; }));
+uploadBox.addEventListener('drop', e => {
+  e.preventDefault();
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+  fileInput.files = dt.files;
+  fileInput.dispatchEvent(new Event('change'));
+});
+
+// ---- controls ----
+document.getElementById('searchBox').addEventListener('input', renderTable);
+document.getElementById('filterSelect').addEventListener('change', renderTable);
+document.getElementById('msgTemplate').addEventListener('input', renderTable);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  let csv = 'رقم,الاسم بالعربي,الاسم بالانجليزي,الهاتف,الحالة\n';
+  LEADS.forEach(lead => {
+    let status = 'لسه';
+    if(sentSet.has(lead.n)) status = 'تم الإرسال';
+    else if(noWaSet.has(lead.n)) status = 'لا يوجد واتساب';
+    csv += `${lead.n},"${lead.nameAr}","${lead.nameEn}","${lead.phone}",${status}\n`;
+  });
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'nexora-outreach-status.csv';
+  a.click();
+});
+
+document.getElementById('exportNoWaBtn').addEventListener('click', () => {
+  let csv = 'رقم,الاسم بالعربي,الاسم بالانجليزي,الهاتف\n';
+  LEADS.filter(l => noWaSet.has(l.n)).forEach(lead => {
+    csv += `${lead.n},"${lead.nameAr}","${lead.nameEn}","${lead.phone}"\n`;
+  });
+  if(noWaSet.size === 0){ alert('لسه معلّمتش على أي رقم إنه بدون واتساب.'); return; }
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'nexora-no-whatsapp-numbers.csv';
+  a.click();
+});
+
+renderTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>NEXORA — أداة اختيار الميديا</title>
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --panel: #131318;
+    --panel2: #1a1a20;
+    --border: #2a2a32;
+    --gold: #BA8F58;
+    --gold-light: #e0c898;
+    --text: #eaeaea;
+    --text-dim: #8a8a92;
+    --green: #4caf7d;
+    --red: #d9534f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 {
+    color: var(--gold-light);
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { border-color: var(--gold); }
+  button.primary { background: var(--gold); color: #1a1408; font-weight: bold; border: none; }
+  button.primary:hover { background: var(--gold-light); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .status { font-size: 13px; color: var(--text-dim); }
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    color: var(--gold-light);
+    margin: 0 0 12px;
+  }
+  .scene-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    background: var(--panel2);
+  }
+  .scene-row.filled { border-color: var(--green); }
+  .scene-num {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #1a1408;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .scene-info { flex: 1; min-width: 0; }
+  .scene-text { font-size: 12.5px; line-height: 1.4; }
+  .scene-type { font-size: 10.5px; color: var(--text-dim); }
+  .scene-thumb {
+    width: 44px;
+    height: 76px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #000;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .scene-empty {
+    width: 44px;
+    height: 76px;
+    border-radius: 4px;
+    border: 1px dashed var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--red);
+    font-size: 16px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    max-height: 720px;
+    overflow-y: auto;
+  }
+  .file-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 10.5px;
+  }
+  .file-card img, .file-card video {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #000;
+    display: block;
+  }
+  .file-name {
+    margin: 6px 0 4px;
+    color: var(--text-dim);
+    word-break: break-all;
+    max-height: 28px;
+    overflow: hidden;
+  }
+  select {
+    width: 100%;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px;
+    font-size: 11px;
+  }
+  .audio-card { text-align: center; padding: 14px 6px; }
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    background: #000;
+    color: #7be08c;
+    font-family: Consolas, monospace;
+    font-size: 12.5px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 12px;
+    direction: ltr;
+    text-align: left;
+    white-space: pre;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-inline-start: 6px;
+  }
+  .badge.video { background: #2a3d5c; color: #9cc0f5; }
+  .badge.image { background: #4a3a1a; color: var(--gold-light); }
+  .badge.audio { background: #3a2a4a; color: #c99cf5; }
+</style>
+</head>
+<body>
+
+<h1>NEXORA — أداة اختيار ميديا الفيديو</h1>
+<div class="sub">اختر مجلد الميديا، اربط كل عنصر بمشهده، ثم ولّد كود PowerShell جاهز للنسخ</div>
+
+<div class="toolbar">
+  <button class="primary" id="pickBtn">1. اختر مجلد الميديا</button>
+  <span class="status" id="scanStatus">لسه معملتش اختيار</span>
+  <button id="genBtn" disabled>2. ولّد كود PowerShell للمشاهد</button>
+  <button id="genTagBtn" disabled>3. ولّد كود تصنيف الملفات (بالتاج)</button>
+  <button id="sheetBtn" disabled>4. صدّر شيت معاينة (لإرساله لـ Claude)</button>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>المشاهد (اضغط على أي ملف يمين واختاره من القايمة المنسدلة)</h2>
+    <div id="sceneList"></div>
+  </div>
+
+  <div class="panel">
+    <h2>ملفات الميديا اللي اتلقت <span id="fileCount"></span></h2>
+    <input type="text" id="searchBox" placeholder="دور باسم الملف..." style="width:100%; margin-bottom:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:13px;">
+    <div class="grid" id="fileGrid"><div class="status">اضغط "اختر مجلد الميديا" فوق عشان يبدأ المسح</div></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;" id="outputPanel" hidden>
+  <h2>كود PowerShell — انسخه كامل والصقه في نافذة PowerShell</h2>
+  <p class="sub">قبل التنفيذ: عدّل قيمة <code>$dst</code> تحت لو مسار مشروعك مختلف عن <code>C:\Users\fagr\my-video</code></p>
+  <textarea id="outputCode" readonly></textarea>
+  <button id="copyBtn" style="margin-top:10px;">نسخ الكود</button>
+</div>
+
+<script>
+const SCENES = [
+  { id: 1,  text: "الشركات الكبيرة مش بتفشل بسبب نقص الأفكار", type: "video", folder: "videos" },
+  { id: 2,  text: "عندها أفكار أكتر من اللازم في الأصل",        type: "video", folder: "videos" },
+  { id: 3,  text: "المشكلة إنها بتبني من غير أساس",              type: "image", folder: "story"  },
+  { id: 4,  text: "كل فكرة بتتنفذ لوحدها من غير نظام يربطها",   type: "video", folder: "videos" },
+  { id: 5,  text: "فبتكبر وتقع من جوه",                          type: "image", folder: "story"  },
+  { id: 6,  text: "NEXORA مش شركة مواقع",                        type: "video", folder: "videos" },
+  { id: 7,  text: "ولا شركة برمجة",                              type: "video", folder: "videos" },
+  { id: 8,  text: "ولا وكالة تسويق",                             type: "image", folder: "story"  },
+  { id: 9,  text: "إحنا مش بنبيعك أداة (بوستر WE BUILD)",        type: "image", folder: "story"  },
+  { id: 10, text: "إحنا بنبني البنية التحتية لبيزنسك",           type: "video", folder: "videos" },
+  { id: 11, text: "زي الأساس تحت البرج",                          type: "image", folder: "story"  },
+  { id: 12, text: "نظام واحد يشتغل بيه كل حاجة (بوستر WE SCALE)", type: "image", folder: "story"  },
+  { id: 13, text: "مش عشرين أداة متفرقة",                        type: "video", folder: "videos" },
+  { id: 14, text: "الفرق بين شركة بتكبر وشركة بتتفكك",           type: "image", folder: "story"  },
+  { id: 15, text: "أنظمة، مش أدوات (شعار + تكستشر)",             type: "image", folder: "story"  },
+];
+
+const TAG_PRESETS = [
+  "كود / تقنية", "مدينة / أفق", "أشخاص / بيزنس", "لابتوب / مكتب",
+  "جسيمات / فوضى", "شبكة / خطوط", "زجاج مكسور", "مباني / عمارة",
+  "إضاءة تجريدي", "أيدي / تفاصيل"
+];
+
+let scannedFiles = [];
+let assignments = {};
+let tagAssignments = {};
+let rootPath = "";
+let searchTerm = "";
+
+const sceneListEl = document.getElementById('sceneList');
+const fileGridEl = document.getElementById('fileGrid');
+const genBtn = document.getElementById('genBtn');
+
+function extOf(name){ return name.split('.').pop().toLowerCase(); }
+function kindOf(name){
+  const e = extOf(name);
+  if (['mp4','mov','webm','m4v'].includes(e)) return 'video';
+  if (['jpg','jpeg','png','webp'].includes(e)) return 'image';
+  if (['mp3','wav','m4a'].includes(e)) return 'audio';
+  return null;
+}
+
+function renderScenes(){
+  sceneListEl.innerHTML = '';
+  SCENES.forEach(s => {
+    const file = assignments[s.id];
+    const row = document.createElement('div');
+    row.className = 'scene-row' + (file ? ' filled' : '');
+    row.innerHTML = `
+      <div class="scene-num">${s.id}</div>
+      ${file ? `<img class="scene-thumb" src="${file.thumb || ''}">` : `<div class="scene-empty">فاضي</div>`}
+      <div class="scene-info">
+        <div class="scene-text">${s.text}</div>
+        <div class="scene-type">${s.type === 'video' ? 'فيديو' : 'صورة'} — ${file ? file.relativePath : 'محتاج ملف'}</div>
+      </div>
+      ${file ? `<button class="remove-btn" data-scene="${s.id}">✕</button>` : ''}
+    `;
+    sceneListEl.appendChild(row);
+  });
+  sceneListEl.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.onclick = () => { delete assignments[btn.dataset.scene]; renderScenes(); updateGenBtn(); };
+  });
+}
+
+function updateGenBtn(){
+  const count = Object.keys(assignments).length;
+  genBtn.disabled = count === 0;
+  genBtn.textContent = `2. ولّد كود PowerShell (${count} مشهد متربط)`;
+}
+
+async function walkDirectory(dirHandle, relPath){
+  const results = [];
+  for await (const [name, handle] of dirHandle.entries()){
+    const currentRel = relPath ? relPath + '\\' + name : name;
+    if (handle.kind === 'file'){
+      const kind = kindOf(name);
+      if (kind){
+        const file = await handle.getFile();
+        results.push({ name, relativePath: currentRel, kind, file });
+      }
+    } else if (handle.kind === 'directory'){
+      const nested = await walkDirectory(handle, currentRel);
+      results.push(...nested);
+    }
+  }
+  return results;
+}
+
+async function makeVideoThumb(file){
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.src = URL.createObjectURL(file);
+    video.addEventListener('loadeddata', () => {
+      video.currentTime = Math.min(1, (video.duration || 1) / 2);
+    });
+    video.addEventListener('seeked', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 120; canvas.height = 90;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, 120, 90);
+      resolve(canvas.toDataURL('image/jpeg', 0.6));
+    });
+    video.addEventListener('error', () => resolve(''));
+    setTimeout(() => resolve(''), 4000);
+  });
+}
+
+document.getElementById('pickBtn').onclick = async () => {
+  try {
+    const dirHandle = await window.showDirectoryPicker();
+    rootPath = dirHandle.name;
+    document.getElementById('scanStatus').textContent = 'بيمسح الملفات...';
+    const files = await walkDirectory(dirHandle, '');
+    document.getElementById('scanStatus').textContent = `تم مسح ${files.length} ملف من "${rootPath}"`;
+    document.getElementById('fileCount').textContent = `(${files.length})`;
+    document.getElementById('sheetBtn').disabled = false;
+
+    scannedFiles = files.map((f, i) => ({ ...f, id: i, thumb: f.kind === 'image' ? URL.createObjectURL(f.file) : '' }));
+    renderFileGrid();
+
+    for (const f of scannedFiles){
+      if (f.kind === 'video'){
+        f.thumb = await makeVideoThumb(f.file);
+        renderFileGrid();
+      }
+    }
+  } catch (err){
+    document.getElementById('scanStatus').textContent = 'اتلغى الاختيار أو حصل خطأ';
+  }
+};
+
+function renderFileGrid(){
+  fileGridEl.innerHTML = '';
+  const visibleFiles = searchTerm
+    ? scannedFiles.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : scannedFiles;
+  visibleFiles.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'file-card';
+    let preview = '';
+    if (f.kind === 'audio'){
+      preview = `<div class="audio-card">🎵</div>`;
+    } else {
+      preview = `<img src="${f.thumb}" onerror="this.style.opacity=0.2">`;
+    }
+    const options = SCENES.map(s => `<option value="${s.id}">${s.id}. ${s.text.slice(0,28)}...</option>`).join('');
+    card.innerHTML = `
+      ${preview}
+      <div class="file-name">${f.name}<span class="badge ${f.kind}">${f.kind}</span></div>
+      <select data-file="${f.id}">
+        <option value="">-- اختر مشهد --</option>
+        ${options}
+      </select>
+      <select class="tag-select" data-file="${f.id}" style="width:100%; margin-top:5px; background:var(--panel); color:var(--gold-light); border:1px solid var(--border); border-radius:5px; padding:4px; font-size:11px;">
+        <option value="">-- تصنيف --</option>
+        ${TAG_PRESETS.map(t => `<option value="${t}" ${tagAssignments[f.id]===t ? 'selected':''}>${t}</option>`).join('')}
+        <option value="__custom__" ${(tagAssignments[f.id] && !TAG_PRESETS.includes(tagAssignments[f.id])) ? 'selected':''}>+ مخصص (اكتب بنفسك)</option>
+      </select>
+      <input type="text" class="tag-custom" data-file="${f.id}"
+        value="${(tagAssignments[f.id] && !TAG_PRESETS.includes(tagAssignments[f.id])) ? tagAssignments[f.id] : ''}"
+        placeholder="اكتب اسم التصنيف"
+        style="width:100%; margin-top:5px; background:var(--panel); color:var(--gold-light); border:1px solid var(--border); border-radius:5px; padding:4px; font-size:11px; display:${(tagAssignments[f.id] && !TAG_PRESETS.includes(tagAssignments[f.id])) ? 'block':'none'};">
+    `;
+    fileGridEl.appendChild(card);
+  });
+  fileGridEl.querySelectorAll('select').forEach(sel => {
+    sel.onchange = () => {
+      const fileId = parseInt(sel.dataset.file);
+      const file = scannedFiles.find(f => f.id === fileId);
+      if (sel.value){
+        assignments[sel.value] = file;
+      }
+      renderScenes();
+      updateGenBtn();
+    };
+  });
+  fileGridEl.querySelectorAll('.tag-select').forEach(sel => {
+    sel.onchange = () => {
+      const fileId = parseInt(sel.dataset.file);
+      const customInput = fileGridEl.querySelector(`.tag-custom[data-file="${fileId}"]`);
+      if (sel.value === '__custom__'){
+        customInput.style.display = 'block';
+        customInput.focus();
+        tagAssignments[fileId] = customInput.value.trim();
+      } else {
+        customInput.style.display = 'none';
+        tagAssignments[fileId] = sel.value;
+      }
+      updateGenTagBtn();
+    };
+  });
+  fileGridEl.querySelectorAll('.tag-custom').forEach(inp => {
+    inp.oninput = () => {
+      const fileId = parseInt(inp.dataset.file);
+      tagAssignments[fileId] = inp.value.trim();
+      updateGenTagBtn();
+    };
+  });
+}
+
+document.getElementById('searchBox').oninput = (e) => {
+  searchTerm = e.target.value;
+  renderFileGrid();
+};
+
+function updateGenTagBtn(){
+  const taggedCount = Object.values(tagAssignments).filter(v => v).length;
+  const btn = document.getElementById('genTagBtn');
+  btn.disabled = taggedCount === 0;
+  btn.textContent = `3. ولّد كود تصنيف الملفات (${taggedCount} ملف اتصنّف)`;
+}
+
+document.getElementById('genTagBtn').onclick = () => {
+  const dst = "C:\\Users\\fagr\\my-video\\public\\library";
+  const groups = {};
+  Object.entries(tagAssignments).forEach(([fileId, tag]) => {
+    if (!tag) return;
+    const file = scannedFiles.find(f => f.id === parseInt(fileId));
+    if (!file) return;
+    if (!groups[tag]) groups[tag] = [];
+    groups[tag].push(file);
+  });
+
+  let lines = [];
+  lines.push(`$src = "PASTE_FULL_PATH_TO_${rootPath || 'YOUR_FOLDER'}_HERE"`);
+  lines.push(`$dst = "${dst}"`);
+  lines.push('');
+  lines.push('New-Item -ItemType Directory -Path "$dst" -Force | Out-Null');
+  lines.push('');
+
+  Object.entries(groups).forEach(([tag, files]) => {
+    const safeTag = tag.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+    files.forEach((file, idx) => {
+      const ext = extOf(file.name);
+      const destName = `${safeTag}-${idx + 1}.${ext}`;
+      lines.push(`Copy-Item "$src\\${file.relativePath}" "$dst\\${destName}" -Force`);
+      lines.push(`Write-Host "${file.name} -> ${destName}" -ForegroundColor Green`);
+    });
+  });
+
+  document.getElementById('outputPanel').hidden = false;
+  document.getElementById('outputCode').value = lines.join('\n');
+};
+
+document.getElementById('genBtn').onclick = () => {
+  const dst = "C:\\Users\\fagr\\my-video\\public";
+  let lines = [];
+  lines.push(`$src = "PASTE_FULL_PATH_TO_${rootPath || 'YOUR_FOLDER'}_HERE"`);
+  lines.push(`$dst = "${dst}"`);
+  lines.push('');
+  lines.push('New-Item -ItemType Directory -Path "$dst\\videos","$dst\\story","$dst\\music" -Force | Out-Null');
+  lines.push('');
+
+  SCENES.forEach(s => {
+    const file = assignments[s.id];
+    if (!file) return;
+    const ext = extOf(file.name);
+    const sceneNum = String(s.id).padStart(2, '0');
+    const destName = `scene-${sceneNum}.${ext}`;
+    lines.push(`Copy-Item "$src\\${file.relativePath}" "$dst\\${s.folder}\\${destName}" -Force`);
+    lines.push(`Write-Host "مشهد ${s.id}: ${file.name} -> ${destName}" -ForegroundColor Green`);
+  });
+
+  document.getElementById('outputPanel').hidden = false;
+  document.getElementById('outputCode').value = lines.join('\n');
+};
+
+document.getElementById('copyBtn').onclick = () => {
+  const ta = document.getElementById('outputCode');
+  ta.select();
+  document.execCommand('copy');
+  document.getElementById('copyBtn').textContent = 'اتنسخ ✓';
+  setTimeout(() => { document.getElementById('copyBtn').textContent = 'نسخ الكود'; }, 1500);
+};
+
+async function loadImg(src){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+document.getElementById('sheetBtn').onclick = async () => {
+  const btn = document.getElementById('sheetBtn');
+  btn.disabled = true;
+  const cols = 5, thumbW = 200, thumbH = 120, labelH = 46;
+  const cellW = thumbW, cellH = thumbH + labelH;
+
+  const nonAudio = scannedFiles.filter(f => f.kind !== 'audio');
+  const totalSheets = 2; // كل شيت يحتوي نص المكتبة تقريباً
+  const perSheet = Math.ceil(nonAudio.length / totalSheets);
+  const rows = Math.ceil(perSheet / cols);
+
+  for (let s = 0; s < totalSheets; s++){
+    btn.textContent = `4. بيجهز شيت ${s + 1} من ${totalSheets}...`;
+    const canvas = document.createElement('canvas');
+    canvas.width = cols * cellW;
+    canvas.height = rows * cellH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0a0d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const pageFiles = nonAudio.slice(s * perSheet, (s + 1) * perSheet);
+    for (let i = 0; i < pageFiles.length; i++){
+      const f = pageFiles[i];
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = col * cellW, y = row * cellH;
+
+      const img = f.thumb ? await loadImg(f.thumb) : null;
+      ctx.fillStyle = '#1a1a20';
+      ctx.fillRect(x, y, thumbW, thumbH);
+      if (img){
+        // cover-fit
+        const scale = Math.max(thumbW / img.width, thumbH / img.height);
+        const sw = thumbW / scale, sh = thumbH / scale;
+        const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, x, y, thumbW, thumbH);
+      }
+      // ID badge
+      const globalId = s * perSheet + i + 1;
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(x, y, 40, 26);
+      ctx.fillStyle = '#e0c898';
+      ctx.font = 'bold 16px Consolas, monospace';
+      ctx.fillText('#' + globalId, x + 4, y + 18);
+      // kind badge
+      ctx.fillStyle = f.kind === 'video' ? '#9cc0f5' : '#e0c898';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(f.kind.toUpperCase(), x + thumbW - 42, y + 14);
+      // filename label
+      ctx.fillStyle = '#cccccc';
+      ctx.font = '10px Consolas, monospace';
+      const name = f.name.length > 26 ? f.name.slice(0, 26) + '…' : f.name;
+      ctx.fillText(name, x + 2, y + thumbH + 16);
+      ctx.fillStyle = '#666';
+      ctx.font = '9px Consolas, monospace';
+      const path = f.relativePath.length > 30 ? '…' + f.relativePath.slice(-30) : f.relativePath;
+      ctx.fillText(path, x + 2, y + thumbH + 30);
+    }
+
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nexora-contact-sheet-${s + 1}-of-${totalSheets}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  btn.textContent = `4. تم تصدير ${totalSheets} شيت — ابعتهم كلهم لـ Claude`;
+  btn.disabled = false;
+};
+
+renderScenes();
+updateGenBtn();
+updateGenTagBtn();
+</script>
+
+</body>
+</html>
