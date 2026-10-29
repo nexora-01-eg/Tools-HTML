@@ -3,3 +3,6 @@ node_modules/
 dist/
 *.log
 
+
+# third-party (excluded): karman-deprecated
+app/karman-deprecated-main/
